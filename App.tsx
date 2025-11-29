@@ -94,7 +94,10 @@ const getInitialState = (): AppState => {
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('wichtel_authenticated') === 'true';
+    return !!localStorage.getItem('wichtel_user_id');
+  });
+  const [userId, setUserId] = useState<string | null>(() => {
+    return localStorage.getItem('wichtel_user_id');
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -106,9 +109,9 @@ const App: React.FC = () => {
 
   // Fetch state from backend
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userId) {
       setIsLoading(true);
-      fetch(`${API_URL}/api/state/${USER_ID}`)
+      fetch(`${API_URL}/api/state/${userId}`)
         .then(res => {
           if (res.ok) {
             return res.json();
@@ -129,7 +132,7 @@ const App: React.FC = () => {
         .catch((error) => {
             console.error("Could not fetch state:", error);
             // On error, we DO NOT reset the state. The user might be offline.
-            // They can continue, and the save effect will try to save later.
+            // They can continue with the cached state, and the save effect will try to save later.
         })
         .finally(() => {
             setHasLoadedFromBackend(true); // Always do this to unblock UI and saving
@@ -138,19 +141,19 @@ const App: React.FC = () => {
     } else {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
   // Save state to backend with internal debouncing
   useEffect(() => {
     // Do not save the initial default state.
     // Only save if the state is not the default reference and has been configured.
-    if (state === DEFAULT_STATE || !state.isConfigured || !isAuthenticated || !hasLoadedFromBackend) {
+    if (state === DEFAULT_STATE || !state.isConfigured || !isAuthenticated || !userId || !hasLoadedFromBackend) {
       return;
     }
 
     const handler = setTimeout(() => {
       // Save to backend
-      fetch(`${API_URL}/api/state/${USER_ID}`, {
+      fetch(`${API_URL}/api/state/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
@@ -167,7 +170,7 @@ const App: React.FC = () => {
     return () => {
       clearTimeout(handler);
     };
-  }, [state, isAuthenticated, hasLoadedFromBackend]);
+  }, [state, isAuthenticated, userId, hasLoadedFromBackend]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
@@ -191,37 +194,30 @@ const App: React.FC = () => {
 
   const completeSetup = async () => {
       // Create the new state with isConfigured = true
-      // We need to capture the current state synchronously before setState is called
       const newState = { ...state, isConfigured: true };
 
       setState(newState);
       setCurrentView(View.DASHBOARD);
 
-      // Immediately save to backend after setup
-      if (isAuthenticated) {
+      // Immediately save to backend and local cache after setup
+      if (isAuthenticated && userId) {
           try {
-              console.log('Saving state to database:', {
-                  isConfigured: newState.isConfigured,
-                  elfName: newState.elf?.name,
-                  kidsCount: newState.elf?.kids?.length
-              });
+              console.log('Saving state to database for user:', userId);
 
-              const response = await fetch(`${API_URL}/api/state/${USER_ID}`, {
+              await fetch(`${API_URL}/api/state/${userId}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(newState),
               });
+              
+              localStorage.setItem('wichtel_cached_state', JSON.stringify(newState));
 
-              if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`);
-              }
-
-              console.log('Setup data saved to database successfully');
+              console.log('Setup data saved successfully');
           } catch (error) {
               console.error('Failed to save setup data:', error);
           }
       } else {
-          console.error('Cannot save: isAuthenticated =', isAuthenticated);
+          console.error('Cannot save: not authenticated or no user ID');
       }
   };
 
@@ -365,21 +361,26 @@ const App: React.FC = () => {
   };
 
     const handleAuth = (email: string, password: string, username?: string) => {
-      // For now, we'll just set the local flag. In a real app, this would
-      // involve a call to a /login or /register endpoint on the backend.
-      localStorage.setItem('wichtel_authenticated', 'true');
+      // In a real app, this would involve a call to a /login or /register endpoint
+      // For now, we'll use the email as the unique user ID
+      localStorage.setItem('wichtel_user_id', email);
       setIsAuthenticated(true);
+      setUserId(email);
       setShowAuthModal(false);
+      
+      // If this is a new registration, reset the state to default
       if (username) {
-        // This is a registration, start with default state
         setState(DEFAULT_STATE);
+        // Also clear any cached state from a previous user
+        localStorage.removeItem('wichtel_cached_state');
       }
     };
 
   const handleLogout = () => {
-    localStorage.removeItem('wichtel_authenticated');
+    localStorage.removeItem('wichtel_user_id');
     localStorage.removeItem('wichtel_cached_state'); // Clear cache
     setIsAuthenticated(false);
+    setUserId(null);
     setState(DEFAULT_STATE); // Reset state on logout
     setCurrentView(View.DASHBOARD);
   };
