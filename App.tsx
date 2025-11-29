@@ -131,7 +131,7 @@ const App: React.FC = () => {
         body: JSON.stringify(debouncedState),
       });
     }
-  }, [debouncedState, isAuthenticated, isLoading, hasLoadedFromBackend]);
+  }, [debouncedState, isAuthenticated]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
