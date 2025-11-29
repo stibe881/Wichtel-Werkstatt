@@ -144,29 +144,26 @@ const App: React.FC = () => {
   };
 
   const completeSetup = async () => {
-      let savedState: AppState | undefined;
+      // Create the new state with isConfigured = true
+      // We need to capture the current state synchronously before setState is called
+      const newState = { ...state, isConfigured: true };
 
-      // Use functional setState to get the latest state
-      setState(prev => {
-          savedState = { ...prev, isConfigured: true };
-          return savedState;
-      });
-
+      setState(newState);
       setCurrentView(View.DASHBOARD);
 
       // Immediately save to backend after setup
-      if (isAuthenticated && savedState) {
+      if (isAuthenticated) {
           try {
               console.log('Saving state to database:', {
-                  isConfigured: savedState.isConfigured,
-                  elfName: savedState.elf?.name,
-                  kidsCount: savedState.elf?.kids?.length
+                  isConfigured: newState.isConfigured,
+                  elfName: newState.elf?.name,
+                  kidsCount: newState.elf?.kids?.length
               });
 
               const response = await fetch(`${API_URL}/api/state/${USER_ID}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(savedState),
+                  body: JSON.stringify(newState),
               });
 
               if (!response.ok) {
@@ -178,7 +175,7 @@ const App: React.FC = () => {
               console.error('Failed to save setup data:', error);
           }
       } else {
-          console.error('Cannot save: isAuthenticated =', isAuthenticated, 'savedState =', savedState);
+          console.error('Cannot save: isAuthenticated =', isAuthenticated);
       }
   };
 
