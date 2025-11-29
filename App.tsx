@@ -317,6 +317,17 @@ const App: React.FC = () => {
     );
   }
 
+  // Show setup only on first login (when not configured)
+  if (!state.isConfigured) {
+      return (
+          <div className="h-full w-full bg-[#fcfaf2] overflow-y-auto bg-parchment">
+            <div className="min-h-full flex flex-col items-center justify-center p-4 py-8">
+              <ElfSettings config={state.elf} onUpdate={updateElfConfig} isSetup={true} onComplete={completeSetup} />
+            </div>
+          </div>
+      );
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case View.SETTINGS:
@@ -506,16 +517,6 @@ const App: React.FC = () => {
         );
     }
   };
-
-  if (!state.isConfigured) {
-      return (
-          <div className="h-full w-full bg-[#fcfaf2] overflow-y-auto bg-parchment">
-            <div className="min-h-full flex flex-col items-center justify-center p-4 py-8">
-              <ElfSettings config={state.elf} onUpdate={updateElfConfig} isSetup={true} onComplete={completeSetup} />
-            </div>
-          </div>
-      );
-  }
 
   if (bossMode) {
       return (
