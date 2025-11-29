@@ -10,26 +10,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
     <div className="min-h-screen bg-gradient-to-br from-elf-dark via-[#3d2820] to-elf-dark">
       {/* Header */}
       <header className="bg-elf-dark/80 backdrop-blur-sm border-b border-elf-wood/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-elf-red to-elf-green rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white text-lg sm:text-xl">🎅</span>
               </div>
-              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-elf-gold via-elf-white to-elf-gold bg-clip-text text-transparent">
+              <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-elf-gold via-elf-white to-elf-gold bg-clip-text text-transparent">
                 Wichtel-Werkstatt
               </h1>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <button
                 onClick={onLogin}
-                className="px-3 sm:px-5 py-1.5 sm:py-2 text-elf-white hover:text-elf-gold transition-colors font-medium text-sm sm:text-base"
+                className="px-3 py-1 sm:px-4 sm:py-1.5 text-elf-white hover:text-elf-gold transition-colors font-medium text-xs sm:text-sm"
               >
                 Anmelden
               </button>
               <button
                 onClick={onRegister}
-                className="px-4 sm:px-6 py-1.5 sm:py-2 bg-gradient-to-r from-elf-red to-elf-green text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium text-sm sm:text-base"
+                className="px-3 py-1 sm:px-4 sm:py-1.5 bg-gradient-to-r from-elf-red to-elf-green text-white rounded-md hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium text-xs sm:text-sm"
               >
                 Registrieren
               </button>
@@ -51,14 +51,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onRegister }) => {
               </div>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl lg:text-7xl font-bold text-elf-white leading-tight px-2">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-elf-white leading-tight px-2">
               Deine private{' '}
               <span className="bg-gradient-to-r from-elf-red via-elf-gold to-elf-green bg-clip-text text-transparent">
                 Wichtel-Plattform
               </span>
             </h2>
 
-            <p className="text-base sm:text-xl lg:text-2xl text-elf-white/80 max-w-3xl mx-auto leading-relaxed px-3">
+            <p className="text-lg sm:text-xl lg:text-2xl text-elf-white/80 max-w-3xl mx-auto leading-relaxed px-3">
               Plane und organisiere magische Wichtel-Momente für deine Familie, Freunde oder Teams.
               <br className="hidden sm:block" />
               <span className="text-elf-gold font-medium">Privat. Persönlich. Perfekt organisiert.</span>

@@ -74,24 +74,24 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
                   <div className="absolute bottom-2 right-2 w-3 h-3 rounded-full bg-[#d4c5a5] shadow-inner"></div>
 
                   {/* Hero Header */}
-                  <div className="bg-[#2d1b14] p-8 text-center relative overflow-hidden bg-wood-texture border-b-4 border-[#e6dac0]">
+                  <div className="bg-[#2d1b14] p-6 md:p-8 text-center relative overflow-hidden bg-wood-texture border-b-4 border-[#e6dac0]">
                       <div className="relative z-10">
-                          <div className="w-24 h-24 bg-[#fcfaf2] rounded-full flex items-center justify-center text-elf-red mx-auto mb-4 shadow-lg border-4 border-elf-gold transform hover:rotate-12 transition-transform duration-500">
-                              <span className="material-icons-round text-5xl">handyman</span>
+                          <div className="w-20 h-20 md:w-24 md:h-24 bg-[#fcfaf2] rounded-full flex items-center justify-center text-elf-red mx-auto mb-4 shadow-lg border-4 border-elf-gold transform hover:rotate-12 transition-transform duration-500">
+                              <span className="material-icons-round text-4xl md:text-5xl">handyman</span>
                           </div>
                           <h1 className="text-3xl md:text-4xl font-serif font-bold text-elf-gold mb-2 shadow-sm drop-shadow-md">Wichtel-Werkstatt</h1>
                           <p className="text-amber-100/80 font-medium text-lg font-serif italic">Registrierungs-Formular</p>
                       </div>
                   </div>
 
-                  <div className="p-6 md:p-8 space-y-8 bg-parchment">
+                  <div className="p-4 sm:p-6 md:p-8 space-y-8 bg-parchment">
                       {/* Intro Text */}
                       <p className="text-slate-700 text-center leading-relaxed font-serif text-lg">
                           Willkommen! Damit wir den passenden Wichtel zuteilen können, benötigen wir ein paar Angaben für das Große Buch.
                       </p>
 
                       {/* Elf Name Section */}
-                      <div className="bg-white p-6 rounded-xl border-2 border-dashed border-[#e6dac0] relative group hover:border-elf-gold transition-colors">
+                      <div className="bg-white p-4 sm:p-6 rounded-xl border-2 border-dashed border-[#e6dac0] relative group hover:border-elf-gold transition-colors">
                           <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">Name des Wichtels</label>
                           <div className="flex flex-col sm:flex-row gap-3">
                               <input
@@ -119,7 +119,7 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
                                       <button
                                           key={p}
                                           onClick={() => handleChange('personality', p)}
-                                          className={`p-2.5 text-sm rounded-lg border-2 text-center transition-all font-medium capitalize ${
+                                          className={`p-3 text-sm rounded-lg border-2 text-center transition-all font-medium capitalize ${
                                               config.personality === p
                                               ? 'bg-elf-red text-white border-elf-red shadow-md transform scale-105' 
                                               : 'bg-white border-[#e6dac0] text-slate-600 hover:border-elf-gold hover:bg-[#fffdf5]'

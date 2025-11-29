@@ -624,11 +624,10 @@ const App: React.FC = () => {
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2d1b14] border-t-4 border-[#5d4037] flex justify-around items-center p-2 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.5)] overflow-x-auto no-scrollbar">
                 <MobileNavButton view={View.DASHBOARD} icon="dashboard" label="Start" current={currentView} onClick={setCurrentView} />
                 <MobileNavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
-                <div className="relative -top-6 flex-shrink-0 mx-2">
-                    <button onClick={() => setCurrentView(View.IDEAS)} className="w-16 h-16 bg-[#855E42] rounded-full text-amber-100 shadow-xl flex items-center justify-center border-4 border-[#2d1b14] active:scale-95 transition-transform"><span className="material-icons-round text-3xl drop-shadow-md">menu_book</span></button>
-                </div>
-                <MobileNavButton view={View.KIDS_ZONE} icon="child_care" label="Kids" current={currentView} onClick={setCurrentView} />
+                <MobileNavButton view={View.IDEAS} icon="menu_book" label="Ideen" current={currentView} onClick={setCurrentView} />
+                <MobileNavButton view={View.RECIPES} icon="bakery_dining" label="Bäckerei" current={currentView} onClick={setCurrentView} />
                 <MobileNavButton view={View.PRINTABLES} icon="print" label="Druck" current={currentView} onClick={setCurrentView} />
+                <MobileNavButton view={View.KIDS_ZONE} icon="child_care" label="Kids" current={currentView} onClick={setCurrentView} />
             </div>
         )}
       </main>
