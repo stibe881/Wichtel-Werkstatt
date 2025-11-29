@@ -114,14 +114,16 @@ const App: React.FC = () => {
 
   // Save state to backend
   useEffect(() => {
-    if (isAuthenticated && !isLoading && state !== DEFAULT_STATE) {
+    // Only save if authenticated, not loading, and state is configured
+    // We check isConfigured to avoid saving DEFAULT_STATE on first load
+    if (isAuthenticated && !isLoading && state.isConfigured) {
       fetch(`${API_URL}/api/state/${USER_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(debouncedState),
       });
     }
-  }, [debouncedState, isAuthenticated, isLoading, state]);
+  }, [debouncedState, isAuthenticated, isLoading]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
