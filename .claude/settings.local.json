@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker-compose exec backend node -e \"\nconst mysql = require(''mysql2/promise'');\n(async () => {\n  const pool = mysql.createPool({\n    host: ''185.178.193.60'',\n    port: 3306,\n    user: ''wichtelwerkstatt'',\n    password: ''!LeliBist.1561!'',\n    database: ''wichtelwerkstatt''\n  });\n  await pool.query(''UPDATE app_state SET state_json = ? WHERE id = ?'', [JSON.stringify({}), ''default_user'']);\n  console.log(''Database state reset to empty'');\n  await pool.end();\n})();\n\")"
+      "Bash(docker-compose exec backend node -e \"\nconst mysql = require(''mysql2/promise'');\n(async () => {\n  const pool = mysql.createPool({\n    host: ''185.178.193.60'',\n    port: 3306,\n    user: ''wichtelwerkstatt'',\n    password: ''!LeliBist.1561!'',\n    database: ''wichtelwerkstatt''\n  });\n  await pool.query(''UPDATE app_state SET state_json = ? WHERE id = ?'', [JSON.stringify({}), ''default_user'']);\n  console.log(''Database reset to empty'');\n  await pool.end();\n})();\n\")"
     ],
     "deny": [],
     "ask": []
