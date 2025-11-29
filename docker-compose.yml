@@ -1,13 +1,16 @@
-version: '3.8'
+# IMPORTANT: This file contains placeholders for secrets.
+# This is for testing purposes only and is not secure for production.
+# Replace the placeholder values like YOUR_SECRET_PASSWORD_HERE before running.
+
 services:
   db:
     image: mariadb:10.6
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: "YOUR_ROOT_PASSWORD_HERE" # Replace this
+      MYSQL_DATABASE: "wichtel_werkstatt"
+      MYSQL_USER: "wichteluser"
+      MYSQL_PASSWORD: "YOUR_USER_PASSWORD_HERE" # Replace this
     ports:
       - "3306:3306"
     volumes:
@@ -24,21 +27,21 @@ services:
     environment:
       - PORT=3001
       - DB_HOST=db
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - DB_USER=wichteluser
+      - DB_PASSWORD=YOUR_USER_PASSWORD_HERE # Replace this
+      - DB_NAME=wichtel_werkstatt
 
   frontend:
     build:
       context: .
       args:
-        - GEMINI_API_KEY=${GEMINI_API_KEY}
+        - GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE # Replace this
     ports:
       - "3050:80"
     depends_on:
       - backend
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE # Replace this
 
 volumes:
   db_data:
