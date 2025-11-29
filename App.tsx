@@ -552,7 +552,8 @@ const App: React.FC = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`md:flex w-20 lg:w-72 bg-[#2d1b14] text-amber-50 flex-shrink-0 flex-col transition-all duration-300 bg-wood-texture border-r-4 border-[#1a100c] shadow-2xl z-20 relative ${currentView === View.KIDS_ZONE ? 'hidden' : 'hidden md:flex'}`}>
+      {currentView !== View.KIDS_ZONE && (
+      <aside className="hidden md:flex w-20 lg:w-72 bg-[#2d1b14] text-amber-50 flex-shrink-0 flex-col transition-all duration-300 bg-wood-texture border-r-4 border-[#1a100c] shadow-2xl z-20 relative">
         <div className="p-6 flex items-center gap-4 border-b border-white/5 bg-black/20 shadow-inner">
             <div className="bg-[#855E42] p-2 rounded shadow-wood-bezel border border-[#5d4037]">
                 <span className="material-icons-round text-elf-gold text-2xl drop-shadow-md">handyman</span>
@@ -571,19 +572,20 @@ const App: React.FC = () => {
         </nav>
         <div className="p-4 border-t border-white/5 bg-black/10">
             {/* KIDS ZONE BUTTON */}
-            <button 
+            <button
                 onClick={() => setCurrentView(View.KIDS_ZONE)}
                 className="w-full flex items-center gap-3 px-4 py-3 mb-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 rounded-lg text-white font-bold shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all"
             >
                 <span className="material-icons-round">child_care</span>
                 <span className="hidden lg:block text-xs uppercase tracking-wide">Kinder-Zone</span>
             </button>
-            
+
             <NavButton view={View.SETTINGS} icon="settings" label="Konfiguration" current={currentView} onClick={setCurrentView} />
             <button onClick={() => setBossMode(true)} className="w-full flex items-center gap-4 px-4 py-2 mt-2 text-xs text-slate-500 hover:text-white transition-colors opacity-50 hover:opacity-100"><span className="material-icons-round">visibility_off</span><span className="hidden lg:block">Chef! (Boss Mode)</span></button>
             <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-2 mt-auto text-xs text-elf-red hover:text-white transition-colors"><span className="material-icons-round">logout</span><span className="hidden lg:block">Abmelden</span></button>
         </div>
       </aside>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative shadow-inner bg-wood-texture">
