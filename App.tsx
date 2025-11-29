@@ -12,7 +12,7 @@ import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
-import { useDebounce } from './hooks/useDebounce';
+import { useDebounce } from './src/hooks/useDebounce';
 
 const API_URL = 'http://localhost:3001';
 const USER_ID = 'default_user';
