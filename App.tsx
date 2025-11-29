@@ -143,9 +143,24 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, elf: newConfig }));
   };
 
-  const completeSetup = () => {
-      setState(prev => ({ ...prev, isConfigured: true }));
+  const completeSetup = async () => {
+      const newState = { ...state, isConfigured: true };
+      setState(newState);
       setCurrentView(View.DASHBOARD);
+
+      // Immediately save to backend after setup
+      if (isAuthenticated) {
+          try {
+              await fetch(`${API_URL}/api/state/${USER_ID}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(newState),
+              });
+              console.log('Setup data saved to database');
+          } catch (error) {
+              console.error('Failed to save setup data:', error);
+          }
+      }
   };
 
   const addIdea = (idea: Idea) => {

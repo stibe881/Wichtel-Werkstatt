@@ -1,20 +1,21 @@
-# IMPORTANT: This file contains placeholders for secrets.
-# This is for testing purposes only and is not secure for production.
-# Replace the placeholder values like YOUR_SECRET_PASSWORD_HERE before running.
+# Docker Compose configuration for Wichtel-Werkstatt
+# Uses local MariaDB database in Docker
 
 services:
   db:
     image: mariadb:10.6
     restart: always
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: "YOUR_ROOT_PASSWORD_HERE" # Replace this
-      MYSQL_DATABASE: "wichtel_werkstatt"
-      MYSQL_USER: "wichteluser"
-      MYSQL_PASSWORD: "YOUR_USER_PASSWORD_HERE" # Replace this
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
 
   backend:
     build:
@@ -24,24 +25,20 @@ services:
       - db
     ports:
       - "3001:3001"
+    env_file:
+      - .env
     environment:
       - PORT=3001
-      - DB_HOST=db
-      - DB_USER=wichteluser
-      - DB_PASSWORD=YOUR_USER_PASSWORD_HERE # Replace this
-      - DB_NAME=wichtel_werkstatt
 
   frontend:
     build:
       context: .
-      args:
-        - GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE # Replace this
     ports:
       - "3050:80"
     depends_on:
       - backend
-    environment:
-      - GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE # Replace this
+    env_file:
+      - .env
 
 volumes:
   db_data:
