@@ -86,6 +86,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
+  const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   const debouncedState = useDebounce(state, 1000);
 
   // Fetch state from backend
@@ -104,8 +105,12 @@ const App: React.FC = () => {
             } else {
                 setState(DEFAULT_STATE);
             }
+            setHasLoadedFromBackend(true);
         })
-        .catch(() => setState(DEFAULT_STATE))
+        .catch(() => {
+            setState(DEFAULT_STATE);
+            setHasLoadedFromBackend(true);
+        })
         .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
@@ -114,16 +119,19 @@ const App: React.FC = () => {
 
   // Save state to backend
   useEffect(() => {
-    // Only save if authenticated, not loading, and state is configured
-    // We check isConfigured to avoid saving DEFAULT_STATE on first load
-    if (isAuthenticated && !isLoading && state.isConfigured) {
+    // Only save if:
+    // 1. User is authenticated
+    // 2. Not currently loading
+    // 3. Has loaded initial data from backend (prevents saving DEFAULT_STATE on mount)
+    // 4. State is configured (prevents saving incomplete setup)
+    if (isAuthenticated && !isLoading && hasLoadedFromBackend && state.isConfigured) {
       fetch(`${API_URL}/api/state/${USER_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(debouncedState),
       });
     }
-  }, [debouncedState, isAuthenticated, isLoading]);
+  }, [debouncedState, isAuthenticated, isLoading, hasLoadedFromBackend]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
