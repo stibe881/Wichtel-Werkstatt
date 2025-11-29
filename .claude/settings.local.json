@@ -8,7 +8,9 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Configure Tailwind CSS for production and optimize Docker setup\n\n- Replace Tailwind CDN with proper PostCSS integration for production\n- Install tailwindcss, postcss, and autoprefixer as dev dependencies\n- Create tailwind.config.js with custom elf theme configuration\n- Move all custom styles to src/index.css with Tailwind directives\n- Add production-ready favicon (elf hat SVG)\n- Upgrade Dockerfile from Node 18 to Node 20 (fixes engine warnings)\n- Modernize docker-compose.yml (remove deprecated version field)\n- Add .dockerignore for optimized Docker builds\n- Configure Vite build with proper rollup options\n\nBuild output: 232KB CSS (31KB gzipped), 633KB JS (158KB gzipped)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []
