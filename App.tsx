@@ -144,8 +144,14 @@ const App: React.FC = () => {
   };
 
   const completeSetup = async () => {
-      const newState = { ...state, isConfigured: true };
-      setState(newState);
+      let savedState: AppState;
+
+      // Use functional setState to get the latest state
+      setState(prev => {
+          savedState = { ...prev, isConfigured: true };
+          return savedState;
+      });
+
       setCurrentView(View.DASHBOARD);
 
       // Immediately save to backend after setup
@@ -154,7 +160,7 @@ const App: React.FC = () => {
               await fetch(`${API_URL}/api/state/${USER_ID}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(newState),
+                  body: JSON.stringify(savedState!),
               });
               console.log('Setup data saved to database');
           } catch (error) {

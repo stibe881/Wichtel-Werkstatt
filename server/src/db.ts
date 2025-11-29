@@ -40,7 +40,9 @@ export const initDB = async () => {
 export const getState = async (userId: string): Promise<any> => {
   const [rows]: any[] = await pool.query('SELECT state_json FROM app_state WHERE id = ?', [userId]);
   if (rows.length > 0) {
-    return rows[0].state_json;
+    const stateJson = rows[0].state_json;
+    // Parse JSON string if it's a string, otherwise return as-is
+    return typeof stateJson === 'string' ? JSON.parse(stateJson) : stateJson;
   }
   return null;
 };
