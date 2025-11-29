@@ -1,0 +1,52 @@
+import mysql from 'mysql2/promise';
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'wichtel_werkstatt',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+export const initDB = async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('Connected to database');
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS app_state (
+        id VARCHAR(255) PRIMARY KEY,
+        state_json JSON NOT NULL
+      );
+    `);
+    
+    // For simplicity, we'll use a single row with a static ID to store the state.
+    // In a real multi-user app, this ID would be linked to a user.
+    await connection.query(`
+      INSERT IGNORE INTO app_state (id, state_json) VALUES ('default_user', '{}');
+    `);
+
+    connection.release();
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    process.exit(1);
+  }
+};
+
+export const getState = async (userId: string): Promise<any> => {
+  const [rows]: any[] = await pool.query('SELECT state_json FROM app_state WHERE id = ?', [userId]);
+  if (rows.length > 0) {
+    return rows[0].state_json;
+  }
+  return null;
+};
+
+export const saveState = async (userId: string, state: any): Promise<void> => {
+  const stateJson = JSON.stringify(state);
+  await pool.query('UPDATE app_state SET state_json = ? WHERE id = ?', [stateJson, userId]);
+};
+
+export default pool;

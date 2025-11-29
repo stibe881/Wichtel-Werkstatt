@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, AppState, ElfConfig, Idea, ArchivedYear, Kid } from './types';
 import ElfSettings from './components/ElfSettings';
 import IdeaGenerator from './components/IdeaGenerator';
@@ -12,6 +12,10 @@ import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
+import { useDebounce } from './hooks/useDebounce';
+
+const API_URL = 'http://localhost:3001';
+const USER_ID = 'default_user';
 
 const STARTER_IDEAS: Idea[] = [
     { id: 'start-1', title: 'Der magische Einzug', description: 'Die Wichteltür ist über Nacht erschienen! Davor liegt ein kleiner Brief und etwas "Feenstaub" (Glitzer).', materials: ['Wichteltür', 'Glitzer', 'Brief'], effort: 'mittel', messiness: 'sauber', type: 'arrival' },
@@ -79,29 +83,45 @@ const App: React.FC = () => {
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('wichtel_werkstatt_v4');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // Default gender for backward compatibility
-            const kids = parsed.elf?.kids?.map((k: any) => ({ ...k, gender: k.gender || 'boy' })) || [];
-            const elf = parsed.elf ? { ...parsed.elf, kids } : DEFAULT_CONFIG;
+  const [state, setState] = useState<AppState>(DEFAULT_STATE);
+  const debouncedState = useDebounce(state, 1000);
 
-            if (parsed.isConfigured === undefined) {
-                return { ...parsed, isConfigured: true, archives: parsed.archives || [], elf };
+  // Fetch state from backend
+  useEffect(() => {
+    if (isAuthenticated) {
+      setIsLoading(true);
+      fetch(`${API_URL}/api/state/${USER_ID}`)
+        .then(res => {
+          if (res.ok) return res.json();
+          // If no state on backend, start with default
+          return DEFAULT_STATE;
+        })
+        .then(data => {
+            if (data && Object.keys(data).length > 0) {
+                setState(data);
+            } else {
+                setState(DEFAULT_STATE);
             }
-            if (!parsed.archives) {
-                return { ...parsed, archives: [], elf };
-            }
-            return { ...parsed, elf };
-        } catch (e) {
-            return DEFAULT_STATE;
-        }
+        })
+        .catch(() => setState(DEFAULT_STATE))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    return DEFAULT_STATE;
-  });
+  }, [isAuthenticated]);
+
+  // Save state to backend
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && state !== DEFAULT_STATE) {
+      fetch(`${API_URL}/api/state/${USER_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(debouncedState),
+      });
+    }
+  }, [debouncedState, isAuthenticated, isLoading, state]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
@@ -113,10 +133,6 @@ const App: React.FC = () => {
 
   // Weather state
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
-
-  useEffect(() => {
-    localStorage.setItem('wichtel_werkstatt_v4', JSON.stringify(state));
-  }, [state]);
 
   useEffect(() => {
     const w = getWeather();
@@ -272,30 +288,21 @@ const App: React.FC = () => {
   };
 
     const handleAuth = (email: string, password: string, username?: string) => {
+      // For now, we'll just set the local flag. In a real app, this would
+      // involve a call to a /login or /register endpoint on the backend.
       localStorage.setItem('wichtel_authenticated', 'true');
-      if (username) {
-        localStorage.setItem('wichtel_username', username);
-        setState(DEFAULT_STATE);
-      } else {
-        // This is a login. Reload state from storage just in case.
-        const saved = localStorage.getItem('wichtel_werkstatt_v4');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            setState(parsed); // Force reload of state
-          } catch(e) {
-            // If parsing fails, we'll end up with default state, which is what would happen anyway.
-            setState(DEFAULT_STATE);
-          }
-        }
-      }
       setIsAuthenticated(true);
       setShowAuthModal(false);
+      if (username) {
+        // This is a registration, start with default state
+        setState(DEFAULT_STATE);
+      }
     };
 
   const handleLogout = () => {
     localStorage.removeItem('wichtel_authenticated');
     setIsAuthenticated(false);
+    setState(DEFAULT_STATE); // Reset state on logout
     setCurrentView(View.DASHBOARD);
   };
 
@@ -312,6 +319,14 @@ const App: React.FC = () => {
   const daysPrepared = state.calendar.filter(d => d.prepared).length;
   const nextOpenDay = state.calendar.find(d => !d.completed)?.day || 24;
   const currentDayPlan = state.calendar[nextOpenDay - 1];
+
+  if (isLoading) {
+    return (
+        <div className="h-screen w-screen bg-elf-dark flex items-center justify-center text-white">
+            <p>Wichtel-Werkstatt wird geladen...</p>
+        </div>
+    )
+  }
 
   // Show landing page if not authenticated
   if (!isAuthenticated) {
