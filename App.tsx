@@ -271,15 +271,25 @@ const App: React.FC = () => {
       return count === 0 ? 0 : total / count;
   };
 
-  const handleAuth = (email: string, password: string, username?: string) => {
-    // Demo: Einfach authentifizieren ohne echte Validierung
-    localStorage.setItem('wichtel_authenticated', 'true');
-    if (username) {
-      localStorage.setItem('wichtel_username', username);
-    }
-    setIsAuthenticated(true);
-    setShowAuthModal(false);
-  };
+    const handleAuth = (email: string, password: string, username?: string) => {
+
+      // Demo: Einfach authentifizieren ohne echte Validierung
+
+      localStorage.setItem('wichtel_authenticated', 'true');
+
+      if (username) {
+
+        localStorage.setItem('wichtel_username', username);
+
+        setState(DEFAULT_STATE);
+
+      }
+
+      setIsAuthenticated(true);
+
+      setShowAuthModal(false);
+
+    };
 
   const handleLogout = () => {
     localStorage.removeItem('wichtel_authenticated');
