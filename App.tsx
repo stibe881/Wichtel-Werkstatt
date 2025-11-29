@@ -105,10 +105,10 @@ const App: React.FC = () => {
         .then(data => {
             // Only update state if we received valid data.
             // An empty object or null from the backend means new user, so use default.
-            if (data && Object.keys(data).length > 0) {
+            if (data && data.isConfigured) {
                 setState(data);
             } else {
-                setState(DEFAULT_STATE); // This is for a new user with no state on the backend.
+                setState(DEFAULT_STATE); // This is for a new user or unconfigured state.
             }
         })
         .catch((error) => {
