@@ -25,8 +25,12 @@ const Printables: React.FC<Props> = ({ elfConfig }) => {
         { id: 'warn', title: 'Gelbe Karte', description: 'Verwarnung für Unfug (Text anpassbar).', icon: 'warning_amber', category: 'official', colorClass: 'border-black bg-yellow-100' },
         { id: 'idcard', title: 'Wichtel-Ausweis', description: 'Offizieller Dienstausweis.', icon: 'badge', category: 'official', colorClass: 'border-blue-800 bg-blue-50' },
         { id: 'construction', title: 'Baustelle', description: 'Schild: Hier werkelt der Wichtel.', icon: 'construction', category: 'fun', colorClass: 'border-orange-500 bg-orange-50' },
+        { id: 'door', title: 'Tür-Schild', description: 'Santa Stop Here / Bitte nicht stören.', icon: 'door_front', category: 'fun', colorClass: 'border-red-500 bg-red-50' },
         { id: 'stationery', title: 'Briefpapier', description: 'Leeres Papier mit Wichtel-Rand.', icon: 'edit_note', category: 'craft', colorClass: 'border-red-800 bg-white' },
+        { id: 'wishlist', title: 'Wunschzettel', description: 'Festliche Vorlage für Wünsche.', icon: 'list_alt', category: 'craft', colorClass: 'border-purple-300 bg-purple-50' },
+        { id: 'tags', title: 'Geschenk-Anhänger', description: 'Kleine Kärtchen zum Ausschneiden.', icon: 'local_offer', category: 'craft', colorClass: 'border-green-600 bg-green-50' },
         { id: 'coloring', title: 'Malvorlage', description: 'Wichteltür zum Ausmalen.', icon: 'palette', category: 'fun', colorClass: 'border-green-600 bg-white' },
+        { id: 'code', title: 'Geheim-Decoder', description: 'Zum Entschlüsseln von Nachrichten.', icon: 'vpn_key', category: 'fun', colorClass: 'border-slate-500 bg-slate-100' },
     ];
     
     const printCertificate = () => {
@@ -258,6 +262,184 @@ const Printables: React.FC<Props> = ({ elfConfig }) => {
         }
     };
 
+    const printWishlist = () => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Wunschzettel</title>
+                    <style>
+                        body { font-family: 'Georgia', serif; background: #fff; margin: 0; padding: 20px; text-align: center; }
+                        .sheet {
+                            border: 5px solid #D42426;
+                            padding: 20px;
+                            border-radius: 15px;
+                            background: #fffdf5;
+                            max-width: 800px; margin: 0 auto;
+                        }
+                        h1 { color: #D42426; font-size: 40px; text-transform: uppercase; letter-spacing: 2px; }
+                        .line { border-bottom: 2px dashed #ccc; height: 50px; margin: 0 20px; }
+                        .intro { font-size: 20px; color: #333; margin-bottom: 30px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="sheet">
+                        <h1>Mein Wunschzettel</h1>
+                        <div class="intro">Lieber Weihnachtsmann, dieses Jahr wünsche ich mir...</div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <br><br>
+                        <div style="text-align: right; padding-right: 40px; font-size: 18px;">Dein(e): __________________</div>
+                    </div>
+                    <script>window.onload = function(){ window.print(); }</script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+    };
+
+    const printTags = () => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Geschenkanhänger</title>
+                    <style>
+                        body { font-family: sans-serif; background: #fff; padding: 20px; }
+                        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+                        .tag { 
+                            border: 2px dashed #888; 
+                            height: 150px; 
+                            position: relative; 
+                            background: #f9f9f9; 
+                            display: flex; flex-direction: column; justify-content: center; align-items: center;
+                        }
+                        /* Cutout shape illusion */
+                        .hole { width: 15px; height: 15px; border: 1px solid black; border-radius: 50%; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
+                        .to { font-size: 20px; margin-bottom: 10px; }
+                        .from { font-size: 16px; font-style: italic; color: #D42426; }
+                        .deco { font-size: 40px; position: absolute; bottom: 10px; right: 10px; opacity: 0.3; }
+                    </style>
+                </head>
+                <body>
+                    <div class="grid">
+                        ${Array(6).fill(0).map(() => `
+                            <div class="tag">
+                                <div class="hole"></div>
+                                <div class="to">FÜR: ________________</div>
+                                <div class="from">VON: ${elfConfig.name}</div>
+                                <div class="deco">🎁</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <script>window.onload = function(){ window.print(); }</script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+    };
+
+    const printDoorSign = () => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Türschild</title>
+                    <style>
+                        body { font-family: sans-serif; background: #fff; text-align: center; }
+                        .hanger { 
+                            width: 300px; height: 700px; 
+                            border: 4px solid #D42426; 
+                            margin: 20px auto; 
+                            border-radius: 20px;
+                            position: relative;
+                            background: #D42426;
+                            color: white;
+                        }
+                        .circle-cut {
+                            width: 100px; height: 100px; 
+                            background: white; border-radius: 50%; 
+                            margin: 30px auto;
+                            border: 5px solid #a00;
+                        }
+                        h1 { font-size: 50px; text-transform: uppercase; margin-top: 50px; line-height: 1.2; }
+                        .icon { font-size: 100px; margin: 50px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="hanger">
+                        <div class="circle-cut"></div>
+                        <h1>Santa<br>Stop<br>Here</h1>
+                        <div class="icon">🎅</div>
+                        <p style="font-size: 24px; font-weight: bold;">(Wir waren brav!)</p>
+                    </div>
+                    <script>window.onload = function(){ window.print(); }</script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+    };
+
+    const printCode = () => {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Geheimcode</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; background: #fff; padding: 40px; }
+                        h1 { text-align: center; color: #333; }
+                        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; border: 2px solid black; padding: 20px; }
+                        .item { border: 1px solid #ccc; padding: 10px; text-align: center; font-size: 24px; }
+                        .key { font-weight: bold; font-size: 30px; color: #D42426; }
+                    </style>
+                </head>
+                <body>
+                    <h1>GEHEIM-DECODER</h1>
+                    <p style="text-align: center;">Benutze diesen Schlüssel, um Nachrichten vom Wichtel zu lesen.</p>
+                    <div class="grid">
+                        <div class="item">A = <span class="key">❄</span></div>
+                        <div class="item">B = <span class="key">⭐</span></div>
+                        <div class="item">C = <span class="key">🎁</span></div>
+                        <div class="item">D = <span class="key">🎄</span></div>
+                        <div class="item">E = <span class="key">⛄</span></div>
+                        <div class="item">F = <span class="key">🦌</span></div>
+                        <div class="item">G = <span class="key">🎅</span></div>
+                        <div class="item">H = <span class="key">🍪</span></div>
+                        <div class="item">I = <span class="key">🕯</span></div>
+                        <div class="item">J = <span class="key">🔔</span></div>
+                        <div class="item">K = <span class="key">🧦</span></div>
+                        <div class="item">L = <span class="key">🎀</span></div>
+                        <div class="item">M = <span class="key">🏠</span></div>
+                        <div class="item">N = <span class="key">🌙</span></div>
+                        <div class="item">O = <span class="key">🍭</span></div>
+                        <div class="item">P = <span class="key">🚂</span></div>
+                        <div class="item">R = <span class="key">🥁</span></div>
+                        <div class="item">S = <span class="key">🎺</span></div>
+                        <div class="item">T = <span class="key">🧸</span></div>
+                        <div class="item">U = <span class="key">🦊</span></div>
+                        <div class="item">V = <span class="key">🦉</span></div>
+                        <div class="item">W = <span class="key">🛷</span></div>
+                    </div>
+                    <script>window.onload = function(){ window.print(); }</script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+    };
+
     const printColoring = () => {
         const win = window.open('', '_blank');
         if (win) {
@@ -300,6 +482,10 @@ const Printables: React.FC<Props> = ({ elfConfig }) => {
             case 'idcard': printIDCard(); break;
             case 'stationery': printStationery(); break;
             case 'coloring': printColoring(); break;
+            case 'wishlist': printWishlist(); break;
+            case 'tags': printTags(); break;
+            case 'door': printDoorSign(); break;
+            case 'code': printCode(); break;
         }
     };
 

@@ -32,7 +32,7 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
   };
 
   const addKid = () => {
-    handleChange('kids', [...config.kids, { name: '', age: 1 }]);
+    handleChange('kids', [...config.kids, { name: '', age: 1, gender: 'boy' }]);
   };
 
   const removeKid = (index: number) => {
@@ -140,9 +140,14 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
                           <div className="space-y-3">
                               {config.kids.map((kid, index) => (
                                   <div key={index} className="flex gap-3 items-center bg-white p-3 pr-4 rounded-xl border border-[#e6dac0] shadow-sm">
-                                      <div className="w-10 h-10 rounded-full bg-elf-green text-white flex items-center justify-center font-bold shrink-0 shadow-sm border-2 border-white">
-                                          {index + 1}
-                                      </div>
+                                      <button 
+                                        onClick={() => handleKidChange(index, 'gender', kid.gender === 'girl' ? 'boy' : 'girl')}
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 shadow-sm border-2 border-white transition-colors ${kid.gender === 'girl' ? 'bg-pink-400 text-white' : 'bg-blue-400 text-white'}`}
+                                        title="Geschlecht ändern"
+                                      >
+                                          <span className="material-icons-round text-lg">{kid.gender === 'girl' ? 'face_3' : 'face_6'}</span>
+                                      </button>
+                                      
                                       <div className="flex-1 flex flex-col justify-center">
                                           <input
                                               type="text"
@@ -285,13 +290,22 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
                 <div className="space-y-3 bg-[#fafafa] p-4 rounded-xl border border-slate-100">
                     {config.kids.map((kid, index) => (
                     <div key={index} className="flex gap-3">
-                        <input
-                        type="text"
-                        value={kid.name}
-                        onChange={(e) => handleKidChange(index, 'name', e.target.value)}
-                        placeholder="Name"
-                        className="flex-1 p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-elf-gold outline-none bg-white"
-                        />
+                        <button 
+                            onClick={() => handleKidChange(index, 'gender', kid.gender === 'girl' ? 'boy' : 'girl')}
+                            className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold shrink-0 border transition-colors ${kid.gender === 'girl' ? 'bg-pink-100 text-pink-500 border-pink-200' : 'bg-blue-100 text-blue-500 border-blue-200'}`}
+                            title={kid.gender === 'girl' ? 'Mädchen' : 'Junge'}
+                        >
+                            <span className="material-icons-round">{kid.gender === 'girl' ? 'face_3' : 'face_6'}</span>
+                        </button>
+                        <div className="flex-1">
+                             <input
+                                type="text"
+                                value={kid.name}
+                                onChange={(e) => handleKidChange(index, 'name', e.target.value)}
+                                placeholder="Name"
+                                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-elf-gold outline-none bg-white mb-1"
+                            />
+                        </div>
                         <div className="relative w-24">
                             <input
                             type="number"

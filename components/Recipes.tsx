@@ -16,56 +16,56 @@ const RECIPES: Recipe[] = [
         title: "Mini-Donuts (Cheerios)",
         desc: "Der Wichtel backt winzige Donuts.",
         category: 'food',
-        ingredients: ["Cheerios/Loopies", "Puderzucker", "Schokostreusel", "Zimt"],
+        ingredients: ["1 kleine Packung Cheerios/Loopies", "50g Puderzucker", "20g Schokostreusel", "1 Prise Zimt"],
         steps: ["Nimm Cheerios aus der Packung.", "Bestäube einige mit Puderzucker ('Puder-Donuts').", "Tauche andere in geschmolzene Schokolade und Streusel.", "Serviere sie in einer Streichholzschachtel."]
     },
     {
         title: "Wichtel-Pfannkuchen",
         desc: "Winzig kleine Pancakes, so groß wie eine Münze.",
         category: 'food',
-        ingredients: ["Pfannkuchenteig", "Zahnstocher (als Besteck)", "Beere (als Deko)"],
+        ingredients: ["100ml Pfannkuchenteig", "2 Zahnstocher (als Besteck)", "1 Beere (als Deko)"],
         steps: ["Teig mit einem Teelöffel in die Pfanne geben.", "Goldbraun backen.", "Zu einem Turm stapeln.", "Mit einem Zahnstocher fixieren."]
     },
     {
         title: "Wichtel-Zauberstäbe",
         desc: "Magische Stäbe für kleine Hände.",
         category: 'food',
-        ingredients: ["Salzstangen", "Weiße Schokolade", "Bunte Streusel / Glitzer"],
+        ingredients: ["10 Salzstangen", "50g Weiße Schokolade", "2 EL Bunte Streusel / Glitzer"],
         steps: ["Schokolade schmelzen.", "Salzstangen zur Hälfte eintauchen.", "Sofort mit Streuseln oder essbarem Glitzer bestreuen.", "Trocknen lassen (am besten im Glas stehend)."]
     },
     {
         title: "Rentier-Nasen",
         desc: "Rote Energiebällchen für den Schlittenflug.",
         category: 'food',
-        ingredients: ["Datteln", "Gemahlene Mandeln", "Backkakao", "Rote Kokosraspeln (oder Zuckerstreusel)"],
+        ingredients: ["100g Datteln (entsteint)", "50g Gemahlene Mandeln", "1 EL Backkakao", "30g Rote Kokosraspeln (oder Zuckerstreusel)"],
         steps: ["Datteln, Mandeln und Kakao mixen bis es klebt.", "Kleine Kugeln formen.", "In den roten Streuseln wälzen.", "Kalt stellen."]
     },
     {
         title: "Winzige Wichtel-Pizza",
         desc: "Herzhaftes für die Nachtschicht.",
         category: 'food',
-        ingredients: ["Cracker (rund)", "Tomatenmark", "Geriebener Käse", "Oregano"],
+        ingredients: ["5 Cracker (rund)", "1 TL Tomatenmark", "1 EL Geriebener Käse", "1 Prise Oregano"],
         steps: ["Cracker mit Tomatenmark bestreichen.", "Käse und Oregano darauf streuen.", "Kurz in der Mikrowelle oder im Ofen schmelzen lassen."]
     },
     {
         title: "Wichtel-Spaghetti",
         desc: "Das Lieblingsessen am Nordpol (Grün!).",
         category: 'food',
-        ingredients: ["Spaghetti", "Grüne Lebensmittelfarbe", "Parmesan (als Schnee)", "Ketchup (als Sauce)"],
+        ingredients: ["1 Portion Spaghetti", "2 Tropfen Grüne Lebensmittelfarbe", "1 TL Parmesan (als Schnee)", "1 Klecks Ketchup (als Sauce)"],
         steps: ["Spaghetti kochen und grüne Farbe ins Kochwasser geben.", "Abgießen und mit etwas Butter mischen.", "Auf dem Teller mit Parmesan-Schnee bestreuen."]
     },
     {
         title: "Rentier-Futter",
         desc: "Glitzerndes Müsli zum Ausstreuen vor der Tür.",
         category: 'food',
-        ingredients: ["Haferflocken", "Zuckerstreusel (Rot/Grün)", "Essbares Glitzer"],
+        ingredients: ["1 Tasse Haferflocken", "2 EL Zuckerstreusel (Rot/Grün)", "1 Prise Essbares Glitzer"],
         steps: ["Alles in einer Schüssel mischen.", "In kleine Säckchen füllen.", "Am Weihnachtsabend vor die Tür streuen, um Rentiere anzulocken."]
     },
     {
         title: "Nordpol-Popcorn",
         desc: "Süß-Salziger Schneesturm.",
         category: 'food',
-        ingredients: ["Popcorn (Salzig)", "Weiße Schokolade", "Smarties (nur rote und grüne)"],
+        ingredients: ["1 Tüte Popcorn (Salzig)", "50g Weiße Schokolade", "1 Handvoll Smarties (nur rote und grüne)"],
         steps: ["Weiße Schokolade schmelzen.", "Über das Popcorn gießen und mischen.", "Smarties dazugeben und auf Backpapier trocknen lassen."]
     },
     
@@ -74,35 +74,35 @@ const RECIPES: Recipe[] = [
         title: "Magische Wichtel-Milch",
         desc: "Verwandelt sich magisch in Blau oder Grün!",
         category: 'drink',
-        ingredients: ["Milch", "Lebensmittelfarbe (blau/grün)", "Glitzer (essbar)", "Vanillezucker"],
+        ingredients: ["200ml Milch", "1 Tropfen Lebensmittelfarbe (blau/grün)", "1 Prise Glitzer (essbar)", "1 TL Vanillezucker"],
         steps: ["Tropfe heimlich Farbe in die leere Müslischale oder das Glas.", "Verdecke es mit etwas Puderzucker oder Mehl.", "Wenn die Kinder Milch einschenken: Magie!"]
     },
     {
         title: "Schneemann-Suppe",
         desc: "Ein besonderer Kakao vom Nordpol.",
         category: 'drink',
-        ingredients: ["Kakao-Pulver", "Mini-Marshmallows", "Zuckerstange", "Heiße Milch"],
+        ingredients: ["2 EL Kakao-Pulver", "5 Mini-Marshmallows", "1 Zuckerstange", "250ml Heiße Milch"],
         steps: ["Kakao anrühren.", "Marshmallows als 'Schneebälle' hinein.", "Mit der Zuckerstange umrühren.", "Eine Notiz dazu: 'Wärmt kalte Nasen!'"]
     },
     {
         title: "Grinch-Saft",
         desc: "Ein grüner Vitamin-Kick.",
         category: 'drink',
-        ingredients: ["Orangensaft", "Banane", "Handvoll Spinat (schmeckt man nicht!)", "Oder: Orangensaft + Blue Curacao Sirup (alkoholfrei)"],
+        ingredients: ["100ml Orangensaft", "1/2 Banane", "1 Handvoll Spinat (schmeckt man nicht!)", "Oder: Orangensaft + Blue Curacao Sirup (alkoholfrei)"],
         steps: ["Alles mixen bis es leuchtend grün ist.", "Ein rotes Herz (Erdbeere oder Sticker am Glas) dazu.", "Servieren."]
     },
     {
         title: "Polarlicht-Punsch",
         desc: "Leuchtet wie der Himmel im Norden.",
         category: 'drink',
-        ingredients: ["Heller Traubensaft", "Mineralwasser", "Gefrorene Beeren", "Ein Tropfen blaue Lebensmittelfarbe"],
+        ingredients: ["100ml Heller Traubensaft", "100ml Mineralwasser", "1 EL Gefrorene Beeren", "1 Tropfen blaue Lebensmittelfarbe"],
         steps: ["Saft und Wasser mischen.", "Ganz wenig blaue Farbe hinzu für den Türkis-Look.", "Gefrorene Beeren als 'Eisberge' hineingeben."]
     },
     {
         title: "Geschmolzener Schneemann",
         desc: "Vanille-Drink mit Gesicht.",
         category: 'drink',
-        ingredients: ["Vanille-Milch oder Joghurt", "Lebensmittelstift (Schwarz/Orange)", "Klarer Becher"],
+        ingredients: ["200ml Vanille-Milch oder Joghurt", "1 Lebensmittelstift (Schwarz/Orange)", "1 Klarer Becher"],
         steps: ["Male ein Schneemann-Gesicht außen auf den klaren Becher.", "Fülle das weiße Getränk hinein.", "Sieht aus wie ein Schneemann im Glas!"]
     }
 ];

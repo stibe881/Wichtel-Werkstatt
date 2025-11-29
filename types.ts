@@ -1,6 +1,7 @@
 export interface Kid {
   name: string;
   age: number;
+  gender: 'boy' | 'girl';
 }
 
 export interface ElfConfig {
@@ -29,6 +30,7 @@ export interface DayPlan {
   notes: string;
   secretMessage?: string; // Message from the Elf to the kids
   imageEvidence?: string; // base64 placeholder if needed
+  behavior?: Record<string, number>; // Maps kid name to score 1-5
 }
 
 export interface ArchivedYear {
@@ -55,5 +57,6 @@ export enum View {
   SETTINGS = 'settings',
   SHOPPING = 'shopping',
   RECIPES = 'recipes',
-  PRINTABLES = 'printables'
+  PRINTABLES = 'printables',
+  KIDS_ZONE = 'kids_zone'
 }

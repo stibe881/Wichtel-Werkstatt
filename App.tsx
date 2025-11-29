@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, AppState, ElfConfig, Idea, ArchivedYear } from './types';
+import { View, AppState, ElfConfig, Idea, ArchivedYear, Kid } from './types';
 import ElfSettings from './components/ElfSettings';
 import IdeaGenerator from './components/IdeaGenerator';
 import Calendar from './components/Calendar';
@@ -7,9 +7,10 @@ import LetterGenerator from './components/LetterGenerator';
 import ShoppingList from './components/ShoppingList';
 import Recipes from './components/Recipes';
 import Printables from './components/Printables';
+import KidsZone from './components/KidsZone';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
+import { getWeather } from './services/weatherService';
 
-// Extended Idea List (30 Items)
 const STARTER_IDEAS: Idea[] = [
     { id: 'start-1', title: 'Der magische Einzug', description: 'Die Wichteltür ist über Nacht erschienen! Davor liegt ein kleiner Brief und etwas "Feenstaub" (Glitzer).', materials: ['Wichteltür', 'Glitzer', 'Brief'], effort: 'mittel', messiness: 'sauber', type: 'arrival' },
     { id: '1', title: 'Mehl-Engel', description: 'Der Wichtel hat einen Schnee-Engel im Mehl auf der Küchenzeile gemacht.', materials: ['Mehl'], effort: 'niedrig', messiness: 'etwas chaos', type: 'normal' },
@@ -43,13 +44,12 @@ const STARTER_IDEAS: Idea[] = [
     { id: 'end-1', title: 'Der Abschiedskoffer', description: 'Der Wichtel sitzt mit gepacktem Koffer da. Er hat ein kleines Abschiedsgeschenk für Levin und Lina da gelassen.', materials: ['Kleiner Koffer', 'Geschenk'], effort: 'mittel', messiness: 'sauber', type: 'departure' }
 ];
 
-// Empty default config to force user input
 const DEFAULT_CONFIG: ElfConfig = {
   name: '',
   personality: 'frech und verspielt',
   kids: [
-      { name: '', age: 6 },
-      { name: '', age: 1 }
+      { name: '', age: 6, gender: 'boy' },
+      { name: '', age: 1, gender: 'girl' }
   ],
   arrivalDate: '2025-12-01',
   departureDate: '2025-12-24'
@@ -77,15 +77,17 @@ const App: React.FC = () => {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            // Migration check: ensure isConfigured exists
+            // Default gender for backward compatibility
+            const kids = parsed.elf?.kids?.map((k: any) => ({ ...k, gender: k.gender || 'boy' })) || [];
+            const elf = parsed.elf ? { ...parsed.elf, kids } : DEFAULT_CONFIG;
+            
             if (parsed.isConfigured === undefined) {
-                return { ...parsed, isConfigured: true, archives: parsed.archives || [] }; 
+                return { ...parsed, isConfigured: true, archives: parsed.archives || [], elf }; 
             }
-            // Migration check: ensure archives exists
             if (!parsed.archives) {
-                return { ...parsed, archives: [] };
+                return { ...parsed, archives: [], elf };
             }
-            return parsed;
+            return { ...parsed, elf };
         } catch (e) {
             return DEFAULT_STATE;
         }
@@ -95,19 +97,23 @@ const App: React.FC = () => {
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
-  
-  // Panic Modal State
   const [showPanicModal, setShowPanicModal] = useState(false);
   const [panicType, setPanicType] = useState<'movement' | 'preparation' | null>(null);
-  
-  const [panicText, setPanicText] = useState(''); // Holds simple excuse or letter
-  const [panicInstruction, setPanicInstruction] = useState(''); // For preparation panic
-
+  const [panicText, setPanicText] = useState('');
+  const [panicInstruction, setPanicInstruction] = useState('');
   const [generatingExcuse, setGeneratingExcuse] = useState(false);
+  
+  // Weather state
+  const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
 
   useEffect(() => {
     localStorage.setItem('wichtel_werkstatt_v4', JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    const w = getWeather();
+    setWeather(w);
+  }, []);
 
   const updateElfConfig = (newConfig: ElfConfig) => {
     setState(prev => ({ ...prev, elf: newConfig }));
@@ -125,14 +131,12 @@ const App: React.FC = () => {
   const updateDay = (day: number, updates: any) => {
     setState(prev => {
       const newCalendar = prev.calendar.map(d => d.day === day ? { ...d, ...updates } : d);
-      
       let newShoppingList = prev.shoppingList;
       if (updates.idea) {
           const materials = updates.idea.materials || [];
           const uniqueMaterials = materials.filter((m: string) => !prev.shoppingList.includes(m));
           newShoppingList = [...prev.shoppingList, ...uniqueMaterials];
       }
-
       return { ...prev, calendar: newCalendar, shoppingList: newShoppingList };
     });
   };
@@ -149,11 +153,8 @@ const App: React.FC = () => {
       shoppingList: state.shoppingList,
       timestamp: new Date().toISOString()
     };
-
-    // Calculate new dates (+1 year)
     const nextArrival = new Date(state.elf.arrivalDate);
     nextArrival.setFullYear(nextArrival.getFullYear() + 1);
-    
     const nextDeparture = new Date(state.elf.departureDate);
     nextDeparture.setFullYear(nextDeparture.getFullYear() + 1);
 
@@ -175,8 +176,6 @@ const App: React.FC = () => {
         departureDate: nextDeparture.toISOString().split('T')[0]
       }
     }));
-    
-    // Switch to Dashboard to show fresh state
     setCurrentView(View.DASHBOARD);
   };
 
@@ -185,7 +184,6 @@ const App: React.FC = () => {
       setShowPanicModal(true);
       setPanicText('');
       setPanicInstruction('');
-      
       setGeneratingExcuse(true);
       const txt = await generateElfExcuse(state.elf);
       setPanicText(txt);
@@ -197,7 +195,6 @@ const App: React.FC = () => {
       setShowPanicModal(true);
       setPanicText('');
       setPanicInstruction('');
-      
       setGeneratingExcuse(true);
       const result = await generateLatePreparationSolution(state.elf);
       setPanicInstruction(result.instruction);
@@ -205,17 +202,10 @@ const App: React.FC = () => {
       setGeneratingExcuse(false);
   };
 
-  // Function to save the panic result to today's calendar
   const handlePanicSave = () => {
-      // Find today or next open day
       const nextOpenDay = state.calendar.find(d => !d.completed)?.day || 1;
-      
-      const updates: any = {
-          secretMessage: panicText
-      };
-
+      const updates: any = { secretMessage: panicText };
       if (panicType === 'preparation') {
-          // If we had no preparation, we create a dummy idea so it shows up
           updates.idea = {
               id: 'panic-' + Date.now(),
               title: 'Notfall-Aktion',
@@ -225,15 +215,13 @@ const App: React.FC = () => {
               messiness: 'sauber',
               type: 'normal'
           };
-          updates.completed = true; // Mark as done since it's an emergency fix
+          updates.completed = true;
           updates.prepared = true;
       }
-
       updateDay(nextOpenDay, updates);
       setShowPanicModal(false);
   };
 
-  // Helper to print content
   const printContent = (title: string, content: string) => {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
@@ -263,17 +251,22 @@ const App: React.FC = () => {
       }
   };
 
-  // Stats for Dashboard
-  const daysPlanned = state.calendar.filter(d => d.idea !== null).length;
+  const calculateKidBehaviorScore = (kidName: string): number => {
+      let total = 0;
+      let count = 0;
+      state.calendar.forEach(day => {
+          if (day.behavior && day.behavior[kidName]) {
+              total += day.behavior[kidName];
+              count++;
+          }
+      });
+      return count === 0 ? 0 : total / count;
+  };
+
   const daysPrepared = state.calendar.filter(d => d.prepared).length;
   const nextOpenDay = state.calendar.find(d => !d.completed)?.day || 24;
   const currentDayPlan = state.calendar[nextOpenDay - 1];
-
-  // Logic for upcoming letters (Secret Messages)
-  const upcomingLetters = state.calendar
-    .filter(d => d.day >= nextOpenDay && d.secretMessage && d.secretMessage.trim().length > 0)
-    .slice(0, 3);
-
+  
   const renderContent = () => {
     switch (currentView) {
       case View.SETTINGS:
@@ -290,13 +283,14 @@ const App: React.FC = () => {
         return <Recipes />;
       case View.PRINTABLES:
         return <Printables elfConfig={state.elf} />;
+      case View.KIDS_ZONE:
+        return <KidsZone elfConfig={state.elf} calendar={state.calendar} onExit={() => setCurrentView(View.DASHBOARD)} />;
       case View.DASHBOARD:
       default:
         return (
           <div className="max-w-5xl mx-auto space-y-6 pb-20 md:pb-0">
-            {/* Hero Card - Wooden Sign Style */}
+            {/* Hero Card */}
             <div className="bg-[#2d1b14] rounded-xl p-1 shadow-2xl border-2 border-[#5d4037] relative group">
-                {/* Screws */}
                 <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-elf-gold shadow-sm opacity-80"></div>
                 <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-elf-gold shadow-sm opacity-80"></div>
                 <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-elf-gold shadow-sm opacity-80"></div>
@@ -314,14 +308,14 @@ const App: React.FC = () => {
                                 </h1>
                              </div>
                              
-                             {/* WEATHER WIDGET (ADDED) */}
+                             {/* WEATHER WIDGET */}
                              <div className="bg-blue-900/40 p-3 rounded-lg border border-blue-200/20 backdrop-blur-sm text-center transform -rotate-2">
                                  <div className="text-[9px] uppercase font-bold text-blue-200 tracking-wider">Nordpol</div>
                                  <div className="flex items-center justify-center gap-1 my-1">
                                     <span className="material-icons-round text-white text-2xl">ac_unit</span>
-                                    <span className="text-2xl font-bold text-white">-22°</span>
+                                    <span className="text-2xl font-bold text-white">{weather.temp}°</span>
                                  </div>
-                                 <div className="text-[10px] text-blue-100 italic">Schneesturm</div>
+                                 <div className="text-[10px] text-blue-100 italic">{weather.condition}</div>
                              </div>
                         </div>
                         
@@ -329,84 +323,89 @@ const App: React.FC = () => {
                             "{state.elf.name}" ist bereit für {state.elf.kids.map(k => k.name).join(' & ')}.
                         </p>
                         
-                        {/* BRAV-O-METER (ADDED) */}
-                        <div className="mt-8 bg-black/40 p-4 rounded-lg border border-white/10 flex flex-col md:flex-row gap-4 items-center">
-                            <div className="flex-1 w-full">
-                                <div className="flex justify-between text-[10px] uppercase font-bold text-amber-100 tracking-wider mb-1">
-                                    <span>Unartig</span>
-                                    <span>Brav-o-Meter</span>
-                                    <span>Engel</span>
-                                </div>
-                                <div className="h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600 relative">
-                                    <div className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 w-full opacity-30"></div>
-                                    <div className="h-full bg-gradient-to-r from-elf-green to-emerald-300 w-[85%] rounded-full relative shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                                        <div className="absolute right-0 top-0 bottom-0 w-1 bg-white animate-pulse"></div>
+                        {/* MULTI BRAV-O-METER */}
+                        <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-2">
+                            {state.elf.kids.map(kid => {
+                                const score = calculateKidBehaviorScore(kid.name);
+                                const percent = score === 0 ? 50 : (score / 5) * 100; // Default to middle if no data
+                                let statusText = 'Noch keine Daten';
+                                if (score > 0) statusText = score < 2.5 ? 'Wichtel ist besorgt...' : score > 4 ? 'Absoluter Engel!' : 'Auf gutem Weg';
+                                
+                                return (
+                                    <div key={kid.name} className="bg-black/40 p-3 rounded-lg border border-white/10">
+                                        <div className="flex justify-between text-[10px] uppercase font-bold text-amber-100 tracking-wider mb-1">
+                                            <span>{kid.name}</span>
+                                            <span>{statusText}</span>
+                                        </div>
+                                        <div className="h-3 bg-gray-700 rounded-full overflow-hidden border border-gray-600 relative">
+                                            <div className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 w-full opacity-30"></div>
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-elf-green to-emerald-300 rounded-full relative shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000"
+                                                style={{ width: `${percent}%` }}
+                                            >
+                                                <div className="absolute right-0 top-0 bottom-0 w-1 bg-white animate-pulse"></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-center text-xs text-green-300 font-bold mt-1">Status: Sehr brav!</div>
-                            </div>
-                            <div className="flex-shrink-0">
-                                <button onClick={() => setCurrentView(View.CALENDAR)} className="bg-elf-gold text-elf-dark px-6 py-3 rounded font-bold hover:bg-yellow-400 transition-colors text-sm md:text-base shadow-lg flex items-center gap-2 border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1">
-                                    <span className="material-icons-round">calendar_month</span>
-                                    Zum Planer
-                                </button>
-                            </div>
+                                )
+                            })}
                         </div>
-
+                        
+                        <div className="mt-4 flex justify-end">
+                             <button onClick={() => setCurrentView(View.CALENDAR)} className="bg-elf-gold text-elf-dark px-6 py-3 rounded font-bold hover:bg-yellow-400 transition-colors text-sm md:text-base shadow-lg flex items-center gap-2 border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1">
+                                <span className="material-icons-round">calendar_month</span>
+                                Zum Planer
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Emergency Button Area */}
+            {/* Emergency Button Area (Styled as Real Buttons) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button 
                     onClick={handlePanicMovement}
-                    className="w-full bg-[#fdfbf7] border-l-8 border-orange-500 p-4 rounded shadow-md flex items-center gap-4 group hover:bg-orange-50 transition-all relative overflow-hidden"
+                    className="w-full bg-gradient-to-b from-orange-50 to-orange-100 border-b-4 border-orange-600 active:border-b-0 active:translate-y-1 active:mt-1 p-4 rounded-xl shadow-lg flex items-center gap-4 group transition-all relative overflow-hidden border border-orange-300"
                 >
-                    <div className="bg-orange-100 p-3 rounded-full group-hover:scale-110 transition-transform">
-                         <span className="material-icons-round text-3xl text-orange-500">warning</span>
+                    <div className="bg-orange-500 p-3 rounded-full shadow-inner text-white group-hover:scale-110 transition-transform border-2 border-orange-400">
+                         <span className="material-icons-round text-3xl">warning</span>
                     </div>
                     <div className="text-left z-10">
-                        <div className="text-[10px] uppercase text-orange-500 font-bold tracking-wider">Notfall-Protokoll</div>
-                        <div className="font-bold text-elf-dark font-serif text-lg">Wichtel nicht bewegt?</div>
+                        <div className="text-[10px] uppercase text-orange-700 font-bold tracking-wider">Notfall-Protokoll</div>
+                        <div className="font-bold text-orange-900 font-serif text-lg">Wichtel nicht bewegt?</div>
                     </div>
                 </button>
                 <button 
                     onClick={handlePanicPreparation}
-                    className="w-full bg-[#fdfbf7] border-l-8 border-purple-500 p-4 rounded shadow-md flex items-center gap-4 group hover:bg-purple-50 transition-all relative overflow-hidden"
+                    className="w-full bg-gradient-to-b from-purple-50 to-purple-100 border-b-4 border-purple-600 active:border-b-0 active:translate-y-1 active:mt-1 p-4 rounded-xl shadow-lg flex items-center gap-4 group transition-all relative overflow-hidden border border-purple-300"
                 >
-                    <div className="bg-purple-100 p-3 rounded-full group-hover:scale-110 transition-transform">
-                         <span className="material-icons-round text-3xl text-purple-500">hourglass_empty</span>
+                    <div className="bg-purple-500 p-3 rounded-full shadow-inner text-white group-hover:scale-110 transition-transform border-2 border-purple-400">
+                         <span className="material-icons-round text-3xl">hourglass_empty</span>
                     </div>
                     <div className="text-left z-10">
-                        <div className="text-[10px] uppercase text-purple-500 font-bold tracking-wider">Notfall-Protokoll</div>
-                        <div className="font-bold text-elf-dark font-serif text-lg">Vorbereitung vergessen?</div>
+                        <div className="text-[10px] uppercase text-purple-700 font-bold tracking-wider">Notfall-Protokoll</div>
+                        <div className="font-bold text-purple-900 font-serif text-lg">Vorbereitung vergessen?</div>
                     </div>
                 </button>
             </div>
 
-            {/* Next Action Card - Clipboard Style */}
+            {/* Next Action Card */}
             <div className="bg-[#855E42] p-1 rounded-lg shadow-xl relative mt-4">
-                {/* Clipboard Clip */}
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-zinc-300 rounded-lg shadow-md border-b-4 border-zinc-400 z-20 flex items-center justify-center">
                     <div className="w-20 h-2 bg-zinc-800 rounded-full opacity-20"></div>
                 </div>
-
                 <div className="bg-[#fcfaf2] p-6 pt-8 rounded shadow-inner min-h-[200px] relative bg-parchment">
                      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                          <span className="material-icons-round text-8xl text-elf-dark">event_available</span>
                      </div>
-
                     <div className="flex items-center gap-2 mb-4">
                         <span className="bg-elf-red text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm border border-red-800">TAG {nextOpenDay}</span>
                         <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wide">Tagesbefehl</h3>
                     </div>
-                    
                     {currentDayPlan?.idea ? (
                         <div className="relative z-10">
                             <h2 className="text-2xl font-serif font-bold text-elf-dark mb-2 decoration-elf-gold decoration-4 underline-offset-4">{currentDayPlan.idea.title}</h2>
                             <p className="text-slate-700 mb-6 text-lg font-serif italic leading-relaxed">"{currentDayPlan.idea.description}"</p>
-                            
                             <div className="flex flex-wrap gap-3">
                                 <span className={`px-3 py-1 rounded font-bold text-xs flex items-center gap-1 border ${currentDayPlan.prepared ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-50 text-red-800 border-red-200'}`}>
                                     <span className="material-icons-round text-base">{currentDayPlan.prepared ? 'check_circle' : 'cancel'}</span>
@@ -431,32 +430,7 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            {/* Upcoming Letters Preview */}
-            {upcomingLetters.length > 0 && (
-                <div className="bg-[#fcfaf2] p-6 rounded shadow-lg border-t-4 border-[#e6dac0] relative">
-                     <div className="flex items-center justify-between mb-4 border-b border-[#e6dac0] pb-2">
-                        <h3 className="text-[#855E42] text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-                            <span className="material-icons-round text-elf-gold text-lg">drafts</span>
-                            Postausgang
-                        </h3>
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {upcomingLetters.map(plan => (
-                             <div key={plan.day} className="bg-white p-4 rounded shadow-sm border border-slate-200 relative group transition-all hover:border-elf-gold hover:-translate-y-1">
-                                 {/* Stamp effect */}
-                                 <div className="absolute top-2 right-2 w-8 h-10 border-2 border-dotted border-red-200 opacity-50"></div>
-
-                                 <div className="flex justify-between items-center mb-2">
-                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tag {plan.day}</span>
-                                 </div>
-                                 <p className="text-sm text-slate-700 font-serif italic leading-relaxed line-clamp-3 pl-3 border-l-2 border-elf-red/30">"{plan.secretMessage}"</p>
-                             </div>
-                        ))}
-                     </div>
-                </div>
-            )}
-
-            {/* Quick Stats Grid */}
+            {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-[#2d1b14] p-4 rounded shadow-lg border border-[#5d4037] flex flex-col items-center text-center">
                      <div className="text-amber-200/50 text-[10px] uppercase font-bold tracking-widest mb-1">Status</div>
@@ -483,54 +457,21 @@ const App: React.FC = () => {
     }
   };
 
-  // Setup / Welcome Screen
   if (!state.isConfigured) {
       return (
           <div className="h-full w-full bg-[#fcfaf2] overflow-y-auto bg-parchment">
             <div className="min-h-full flex flex-col items-center justify-center p-4 py-8">
-              <ElfSettings 
-                config={state.elf} 
-                onUpdate={updateElfConfig} 
-                isSetup={true} 
-                onComplete={completeSetup}
-              />
+              <ElfSettings config={state.elf} onUpdate={updateElfConfig} isSetup={true} onComplete={completeSetup} />
             </div>
           </div>
       );
   }
 
-  // BOSS MODE OVERLAY
   if (bossMode) {
       return (
           <div className="h-screen w-screen bg-white text-black p-0 m-0 overflow-auto" onClick={() => setBossMode(false)}>
-               <div className="bg-[#e6e6e6] p-2 border-b border-[#ccc] text-xs flex gap-4 mb-2">
-                   <span>File</span> <span>Edit</span> <span>View</span> <span>Insert</span> <span>Format</span> <span>Data</span>
-               </div>
-               <div className="p-4">
-                   <h1 className="text-xl font-bold mb-4 font-sans text-left">Q4 Budget Analysis - 2025</h1>
-                   <table className="spreadsheet-table">
-                       <thead>
-                           <tr>
-                               <th>ID</th> <th>Category</th> <th>Jan</th> <th>Feb</th> <th>Mar</th> <th>Apr</th> <th>May</th> <th>Jun</th> <th>Total</th>
-                           </tr>
-                       </thead>
-                       <tbody>
-                           {[...Array(20)].map((_, i) => (
-                               <tr key={i}>
-                                   <td>{1000 + i}</td>
-                                   <td style={{textAlign: 'left'}}>Operating Exp {String.fromCharCode(65+i)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td>{(Math.random() * 1000).toFixed(2)}</td>
-                                   <td><strong>{(Math.random() * 5000).toFixed(2)}</strong></td>
-                               </tr>
-                           ))}
-                       </tbody>
-                   </table>
-               </div>
+               <div className="bg-[#e6e6e6] p-2 border-b border-[#ccc] text-xs flex gap-4 mb-2"><span>File</span> <span>Edit</span> <span>View</span></div>
+               <div className="p-4"><h1 className="text-xl font-bold mb-4 font-sans text-left">Q4 Budget Analysis</h1><table className="spreadsheet-table"><thead><tr><th>ID</th><th>Category</th><th>Total</th></tr></thead><tbody>{[...Array(20)].map((_, i) => (<tr key={i}><td>{1000 + i}</td><td>Operating Exp</td><td><strong>{(Math.random() * 5000).toFixed(2)}</strong></td></tr>))}</tbody></table></div>
           </div>
       )
   }
@@ -541,227 +482,110 @@ const App: React.FC = () => {
       {showPanicModal && (
           <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-[#fcfaf2] w-full max-w-lg rounded-sm shadow-2xl animate-slide-up flex flex-col max-h-[90vh] border-8 border-[#2d1b14] relative">
-                   {/* Nails */}
-                   <div className="absolute top-2 left-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
-                   <div className="absolute top-2 right-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
-                   <div className="absolute bottom-2 left-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
-                   <div className="absolute bottom-2 right-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
-
-                  {/* Modal Header */}
+                  <div className="absolute top-2 left-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
+                  <div className="absolute bottom-2 left-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
+                  <div className="absolute bottom-2 right-2 w-3 h-3 bg-[#1a1a1a] rounded-full shadow-inner"></div>
                   <div className="flex justify-between items-start p-6 border-b-2 border-[#e6dac0] flex-shrink-0 bg-[#f9f5e6]">
-                      <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full border-2 ${panicType === 'movement' ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-purple-100 text-purple-600 border-purple-200'}`}>
-                              <span className="material-icons-round text-2xl">local_pharmacy</span>
-                          </div>
-                          <h3 className="text-xl font-bold text-elf-dark font-serif">
-                              {panicType === 'movement' ? 'Wichtel-Rettung' : 'Plan B Protokoll'}
-                          </h3>
-                      </div>
-                      <button onClick={() => setShowPanicModal(false)} className="text-slate-400 hover:text-slate-600">
-                          <span className="material-icons-round">close</span>
-                      </button>
+                      <h3 className="text-xl font-bold text-elf-dark font-serif">{panicType === 'movement' ? 'Wichtel-Rettung' : 'Plan B Protokoll'}</h3>
+                      <button onClick={() => setShowPanicModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
                   </div>
-                  
-                  {/* Modal Body - Scrollable */}
                   <div className="flex-1 overflow-y-auto p-6 bg-parchment">
-                      {generatingExcuse ? (
-                           <div className="flex flex-col items-center justify-center py-10 gap-4 text-slate-500 font-bold">
-                              <div className="w-16 h-16 border-4 border-elf-red border-t-transparent rounded-full animate-spin"></div>
-                              <span className="text-elf-red font-serif">Verbinde zum Nordpol...</span>
-                           </div>
-                      ) : (
-                          <div className="space-y-6">
-                              {/* Instruction for Parents (Only for Prep Panic) */}
-                              {panicType === 'preparation' && panicInstruction && (
-                                  <div className="bg-[#2d1b14] text-amber-50 p-4 rounded shadow-md transform -rotate-1 border border-[#5d4037]">
-                                      <h4 className="text-xs font-bold uppercase text-elf-gold mb-2 flex items-center gap-2 border-b border-white/20 pb-1">
-                                          <span className="material-icons-round text-sm">visibility_off</span> Nur für Eltern
-                                      </h4>
-                                      <p className="font-medium text-sm leading-relaxed">{panicInstruction}</p>
-                                  </div>
-                              )}
-
-                              {/* The Letter/Excuse */}
-                              <div className="relative">
-                                  <div className={`border-4 border-double p-8 relative bg-white shadow-lg ${panicType === 'movement' ? 'border-orange-200' : 'border-purple-200'}`}>
-                                      <h4 className="text-[10px] font-bold uppercase text-slate-300 mb-4 tracking-widest text-center">Offizielles Schreiben</h4>
-                                      <p className="font-serif text-lg leading-loose text-slate-800 whitespace-pre-wrap text-center">
-                                        "{panicText}"
-                                      </p>
-                                      <div className="mt-8 text-right font-handwriting text-xl text-elf-red">
-                                          - {state.elf.name}
-                                      </div>
-                                  </div>
-                                  
-                                  {/* Print Action for Modal */}
-                                  <div className="mt-4 text-center">
-                                      <button 
-                                        onClick={() => printContent('Wichtel Nachricht', panicText)}
-                                        className="text-xs font-bold text-[#855E42] hover:text-elf-red flex items-center justify-center gap-1 mx-auto bg-[#e6dac0] px-3 py-1 rounded-full"
-                                      >
-                                          <span className="material-icons-round text-sm">print</span> Ausdrucken
-                                      </button>
-                                  </div>
-                              </div>
-                          </div>
-                      )}
+                      {generatingExcuse ? <div className="text-center py-10">Verbinde zum Nordpol...</div> : <div className="space-y-6">{panicType === 'preparation' && panicInstruction && <div className="bg-[#2d1b14] text-amber-50 p-4 rounded shadow-md"><p className="font-medium text-sm">{panicInstruction}</p></div>}<div className="border-4 border-double border-orange-200 p-8 bg-white shadow-lg"><p className="font-serif text-lg leading-loose text-center">"{panicText}"</p></div><div className="text-center"><button onClick={() => printContent('Wichtel Nachricht', panicText)} className="text-xs font-bold text-[#855E42] bg-[#e6dac0] px-3 py-1 rounded-full">Ausdrucken</button></div></div>}
                   </div>
-
-                  {/* Modal Footer */}
                   <div className="p-6 border-t-2 border-[#e6dac0] flex gap-3 flex-shrink-0 bg-[#f9f5e6]">
-                      <button 
-                        onClick={panicType === 'movement' ? handlePanicMovement : handlePanicPreparation}
-                        disabled={generatingExcuse}
-                        className="flex-1 py-3 bg-white border border-slate-300 hover:bg-slate-50 rounded font-bold text-slate-700 transition-colors flex items-center justify-center gap-2 shadow-sm uppercase text-xs tracking-wider"
-                      >
-                          <span className="material-icons-round">autorenew</span>
-                          Neu generieren
-                      </button>
-                      <button 
-                        onClick={handlePanicSave}
-                        disabled={generatingExcuse || !panicText}
-                        className={`flex-1 py-3 rounded font-bold text-white transition-colors shadow-lg flex items-center justify-center gap-2 border-b-4 active:border-b-0 active:translate-y-1 uppercase text-xs tracking-wider ${
-                            panicType === 'movement' 
-                            ? 'bg-elf-red hover:bg-red-700 border-red-900' 
-                            : 'bg-purple-700 hover:bg-purple-800 border-purple-900'
-                        }`}
-                      >
-                          <span className="material-icons-round">check</span>
-                          Speichern
-                      </button>
+                      <button onClick={panicType === 'movement' ? handlePanicMovement : handlePanicPreparation} disabled={generatingExcuse} className="flex-1 py-3 bg-white border border-slate-300 rounded font-bold uppercase text-xs">Neu generieren</button>
+                      <button onClick={handlePanicSave} disabled={generatingExcuse || !panicText} className="flex-1 py-3 rounded font-bold text-white bg-elf-red uppercase text-xs border-b-4 border-red-900 active:border-b-0 active:translate-y-1">Speichern</button>
                   </div>
               </div>
           </div>
       )}
 
-      {/* Desktop Sidebar - Wooden Beam Style */}
-      <aside className="hidden md:flex w-20 lg:w-72 bg-[#2d1b14] text-amber-50 flex-shrink-0 flex-col transition-all duration-300 bg-wood-texture border-r-4 border-[#1a100c] shadow-2xl z-20 relative">
+      {/* Sidebar */}
+      <aside className={`md:flex w-20 lg:w-72 bg-[#2d1b14] text-amber-50 flex-shrink-0 flex-col transition-all duration-300 bg-wood-texture border-r-4 border-[#1a100c] shadow-2xl z-20 relative ${currentView === View.KIDS_ZONE ? 'hidden' : 'hidden md:flex'}`}>
         <div className="p-6 flex items-center gap-4 border-b border-white/5 bg-black/20 shadow-inner">
             <div className="bg-[#855E42] p-2 rounded shadow-wood-bezel border border-[#5d4037]">
                 <span className="material-icons-round text-elf-gold text-2xl drop-shadow-md">handyman</span>
             </div>
             <span className="font-serif font-bold text-xl hidden lg:block tracking-wide text-amber-100 text-shadow">Wichtel<br/>Werkstatt</span>
         </div>
-
-        <nav className="flex-1 py-6 space-y-3 px-3">
+        <nav className="flex-1 py-6 space-y-3 px-3 overflow-y-auto">
             <NavButton view={View.DASHBOARD} icon="dashboard" label="Werkbank" current={currentView} onClick={setCurrentView} />
             <NavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
             <NavButton view={View.IDEAS} icon="menu_book" label="Ideen-Katalog" current={currentView} onClick={setCurrentView} />
             <NavButton view={View.LETTERS} icon="history_edu" label="Schreibstube" current={currentView} onClick={setCurrentView} />
             <NavButton view={View.SHOPPING} icon="inventory_2" label="Material-Lager" current={currentView} onClick={setCurrentView} />
-            
             <div className="my-2 border-t border-white/10 mx-2"></div>
-            
             <NavButton view={View.RECIPES} icon="bakery_dining" label="Wichtel-Bäckerei" current={currentView} onClick={setCurrentView} />
             <NavButton view={View.PRINTABLES} icon="print" label="Druckerei" current={currentView} onClick={setCurrentView} />
         </nav>
-
         <div className="p-4 border-t border-white/5 bg-black/10">
-            <NavButton view={View.SETTINGS} icon="settings" label="Konfiguration" current={currentView} onClick={setCurrentView} />
+            {/* KIDS ZONE BUTTON */}
             <button 
-                onClick={() => setBossMode(true)}
-                className="w-full flex items-center gap-4 px-4 py-2 mt-4 text-xs text-slate-500 hover:text-white transition-colors opacity-50 hover:opacity-100"
+                onClick={() => setCurrentView(View.KIDS_ZONE)}
+                className="w-full flex items-center gap-3 px-4 py-3 mb-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 rounded-lg text-white font-bold shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all"
             >
-                <span className="material-icons-round">visibility_off</span>
-                <span className="hidden lg:block">Chef! (Boss Mode)</span>
+                <span className="material-icons-round">child_care</span>
+                <span className="hidden lg:block text-xs uppercase tracking-wide">Kinder-Zone</span>
             </button>
+            
+            <NavButton view={View.SETTINGS} icon="settings" label="Konfiguration" current={currentView} onClick={setCurrentView} />
+            <button onClick={() => setBossMode(true)} className="w-full flex items-center gap-4 px-4 py-2 mt-2 text-xs text-slate-500 hover:text-white transition-colors opacity-50 hover:opacity-100"><span className="material-icons-round">visibility_off</span><span className="hidden lg:block">Chef! (Boss Mode)</span></button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative shadow-inner bg-wood-texture">
-        {/* Mobile Header */}
-        <header className="bg-[#2d1b14] border-b border-[#5d4037] px-4 py-3 md:px-8 md:py-4 flex justify-between items-center shadow-lg z-10 flex-shrink-0">
-            <div className="flex items-center gap-2 md:hidden">
-                 <span className="material-icons-round text-elf-gold">handyman</span>
-                 <span className="font-serif font-bold text-lg text-amber-100">Werkstatt</span>
-            </div>
-            
-            <h2 className="hidden md:block text-2xl font-bold text-amber-100 font-serif capitalize flex items-center gap-2 text-shadow">
-                {currentView === View.DASHBOARD ? `Hauptquartier` : 
-                 currentView === View.CALENDAR ? 'Planungs-Kalender' :
-                 currentView === View.IDEAS ? 'Bibliothek der Streiche' :
-                 currentView === View.LETTERS ? 'Schreibpult' :
-                 currentView === View.SHOPPING ? 'Vorratskammer' : 
-                 currentView === View.RECIPES ? 'Geheimrezepte' :
-                 currentView === View.PRINTABLES ? 'Dokumenten-Center' : 'Einstellungen'}
-            </h2>
-
-            <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold text-amber-100">{state.elf.name}</p>
+        {currentView !== View.KIDS_ZONE && (
+            <header className="bg-[#2d1b14] border-b border-[#5d4037] px-4 py-3 md:px-8 md:py-4 flex justify-between items-center shadow-lg z-10 flex-shrink-0">
+                <div className="flex items-center gap-2 md:hidden">
+                    <span className="material-icons-round text-elf-gold">handyman</span>
+                    <span className="font-serif font-bold text-lg text-amber-100">Werkstatt</span>
                 </div>
-                <div 
-                    onClick={() => setCurrentView(View.SETTINGS)}
-                    className="w-10 h-10 bg-[#855E42] rounded shadow-wood-bezel flex items-center justify-center text-amber-100 font-serif font-bold border border-[#5d4037] cursor-pointer hover:bg-[#a07050] transition-colors"
-                >
-                    {state.elf.name.charAt(0) || 'E'}
+                <h2 className="hidden md:block text-2xl font-bold text-amber-100 font-serif capitalize flex items-center gap-2 text-shadow">
+                    {currentView === View.DASHBOARD ? `Hauptquartier` : currentView === View.CALENDAR ? 'Planungs-Kalender' : 'Wichtel-Bereich'}
+                </h2>
+                <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block"><p className="text-sm font-bold text-amber-100">{state.elf.name}</p></div>
+                    <div onClick={() => setCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded shadow-wood-bezel flex items-center justify-center text-amber-100 font-serif font-bold border border-[#5d4037] cursor-pointer hover:bg-[#a07050] transition-colors">{state.elf.name.charAt(0) || 'E'}</div>
                 </div>
-            </div>
-        </header>
+            </header>
+        )}
 
-        <div className="flex-1 overflow-y-auto p-3 md:p-6 pb-24 md:pb-6 relative scroll-smooth bg-[#d4c5a5]">
+        <div className={`flex-1 overflow-y-auto ${currentView === View.KIDS_ZONE ? 'p-0' : 'p-3 md:p-6 pb-24 md:pb-6'} relative scroll-smooth bg-[#d4c5a5]`}>
              {renderContent()}
         </div>
         
-        {/* Mobile Bottom Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2d1b14] border-t-4 border-[#5d4037] flex justify-around items-center p-2 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.5)] overflow-x-auto no-scrollbar">
-             <MobileNavButton view={View.DASHBOARD} icon="dashboard" label="Start" current={currentView} onClick={setCurrentView} />
-             <MobileNavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
-             <div className="relative -top-6 flex-shrink-0 mx-2">
-                 <button 
-                    onClick={() => setCurrentView(View.IDEAS)}
-                    className="w-16 h-16 bg-[#855E42] rounded-full text-amber-100 shadow-xl flex items-center justify-center border-4 border-[#2d1b14] active:scale-95 transition-transform"
-                 >
-                     <span className="material-icons-round text-3xl drop-shadow-md">menu_book</span>
-                 </button>
-             </div>
-             <MobileNavButton view={View.RECIPES} icon="bakery_dining" label="Backen" current={currentView} onClick={setCurrentView} />
-             <MobileNavButton view={View.PRINTABLES} icon="print" label="Druck" current={currentView} onClick={setCurrentView} />
-        </div>
+        {currentView !== View.KIDS_ZONE && (
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2d1b14] border-t-4 border-[#5d4037] flex justify-around items-center p-2 pb-safe z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.5)] overflow-x-auto no-scrollbar">
+                <MobileNavButton view={View.DASHBOARD} icon="dashboard" label="Start" current={currentView} onClick={setCurrentView} />
+                <MobileNavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
+                <div className="relative -top-6 flex-shrink-0 mx-2">
+                    <button onClick={() => setCurrentView(View.IDEAS)} className="w-16 h-16 bg-[#855E42] rounded-full text-amber-100 shadow-xl flex items-center justify-center border-4 border-[#2d1b14] active:scale-95 transition-transform"><span className="material-icons-round text-3xl drop-shadow-md">menu_book</span></button>
+                </div>
+                <MobileNavButton view={View.KIDS_ZONE} icon="child_care" label="Kids" current={currentView} onClick={setCurrentView} />
+                <MobileNavButton view={View.PRINTABLES} icon="print" label="Druck" current={currentView} onClick={setCurrentView} />
+            </div>
+        )}
       </main>
     </div>
   );
 };
 
-const NavButton: React.FC<{
-  view: View;
-  icon: string;
-  label: string;
-  current: View;
-  onClick: (v: View) => void;
-}> = ({ view, icon, label, current, onClick }) => {
+const NavButton: React.FC<{ view: View; icon: string; label: string; current: View; onClick: (v: View) => void; }> = ({ view, icon, label, current, onClick }) => {
   const active = current === view;
   return (
-    <button
-      onClick={() => onClick(view)}
-      className={`w-full flex items-center gap-4 px-4 py-3 transition-all relative rounded-l-lg ml-2 mb-1 shadow-sm
-        ${active 
-            ? 'text-[#2d1b14] bg-[#d4c5a5] font-bold border-l-4 border-elf-gold translate-x-1' 
-            : 'text-amber-200/60 hover:text-amber-100 hover:bg-white/5'}
-      `}
-    >
+    <button onClick={() => onClick(view)} className={`w-full flex items-center gap-4 px-4 py-3 transition-all relative rounded-l-lg ml-2 mb-1 shadow-sm ${active ? 'text-[#2d1b14] bg-[#d4c5a5] font-bold border-l-4 border-elf-gold translate-x-1' : 'text-amber-200/60 hover:text-amber-100 hover:bg-white/5'}`}>
       <span className={`material-icons-round ${active ? 'text-[#2d1b14]' : ''}`}>{icon}</span>
       <span className="hidden lg:block text-sm uppercase tracking-wider">{label}</span>
     </button>
   );
 };
 
-const MobileNavButton: React.FC<{
-  view: View;
-  icon: string;
-  label: string;
-  current: View;
-  onClick: (v: View) => void;
-}> = ({ view, icon, label, current, onClick }) => {
+const MobileNavButton: React.FC<{ view: View; icon: string; label: string; current: View; onClick: (v: View) => void; }> = ({ view, icon, label, current, onClick }) => {
   const active = current === view;
   return (
-    <button
-      onClick={() => onClick(view)}
-      className={`flex flex-col items-center justify-center w-14 py-1 transition-colors flex-shrink-0
-        ${active ? 'text-elf-gold font-bold' : 'text-[#855E42]'}
-      `}
-    >
+    <button onClick={() => onClick(view)} className={`flex flex-col items-center justify-center w-14 py-1 transition-colors flex-shrink-0 ${active ? 'text-elf-gold font-bold' : 'text-[#855E42]'}`}>
       <span className={`material-icons-round text-2xl mb-0.5 drop-shadow-sm`}>{icon}</span>
       <span className="text-[9px] uppercase tracking-wide truncate w-full text-center">{label}</span>
     </button>

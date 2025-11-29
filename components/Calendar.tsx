@@ -16,16 +16,15 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
   const [generatingMessage, setGeneratingMessage] = useState(false);
   const [showIdeaPicker, setShowIdeaPicker] = useState(false);
   const [ideaFilter, setIdeaFilter] = useState<'all' | 'arrival' | 'departure' | 'normal'>('all');
+  const [expandedIdeaId, setExpandedIdeaId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper to check for Special Days
   const getSpecialDayType = (day: number) => {
-      // Parse arrival
       const arrivalDate = new Date(elfConfig.arrivalDate);
-      const isArrival = arrivalDate.getDate() === day && arrivalDate.getMonth() === 11; // 11 is December
+      const isArrival = arrivalDate.getDate() === day && arrivalDate.getMonth() === 11;
       
-      // Parse departure
       const departureDate = new Date(elfConfig.departureDate);
       const isDeparture = departureDate.getDate() === day && departureDate.getMonth() === 11;
 
@@ -34,7 +33,15 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
       return null;
   };
 
-  // Drag & Drop handlers
+  const getBehaviorEmoji = (score: number) => {
+      if (score === 1) return '👿';
+      if (score === 2) return '😠';
+      if (score === 3) return '😐';
+      if (score === 4) return '🙂';
+      if (score === 5) return '😇';
+      return '❓';
+  };
+
   const handleDragStart = (e: React.DragEvent, idea: Idea, fromDay?: number) => {
     setDraggedIdea(idea);
     if (fromDay) {
@@ -49,21 +56,17 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
   const handleDrop = (e: React.DragEvent, targetDay: number) => {
     e.preventDefault();
     if (draggedIdea) {
-      // If we are moving FROM another day
       if (draggedFromDay !== null && draggedFromDay !== targetDay) {
-          // Clear source day
           onUpdateDay(draggedFromDay, { 
               idea: null, 
               secretMessage: '', 
               prepared: false, 
               completed: false, 
-              imageEvidence: undefined 
+              imageEvidence: undefined,
+              behavior: undefined
           });
       }
-      
-      // Update target day
       onUpdateDay(targetDay, { idea: draggedIdea });
-      
       setDraggedIdea(null);
       setDraggedFromDay(null);
     }
@@ -100,9 +103,8 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                               background-color: white; 
                               font-family: 'Times New Roman', serif;
                           }
-                          /* THE SCROLL LETTER CONTAINER */
                           .scroll-letter { 
-                              width: 80mm; /* Narrow width for scroll format */
+                              width: 80mm; 
                               margin: 0 auto;
                               padding: 10mm 5mm;
                               font-size: 11pt; 
@@ -131,7 +133,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                               font-family: 'Brush Script MT', cursive;
                           }
                           .deco { text-align: center; font-size: 20pt; color: #D42426; margin: 10px 0; opacity: 0.6; }
-                          
                           @media print {
                               body { background: none; }
                               .no-print { display: none; }
@@ -170,7 +171,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
       if (type === 'arrival') setIdeaFilter('arrival');
       else if (type === 'departure') setIdeaFilter('departure');
       else setIdeaFilter('normal');
-      
       setShowIdeaPicker(true);
   };
 
@@ -187,11 +187,9 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
               const scaleSize = MAX_WIDTH / img.width;
               canvas.width = MAX_WIDTH;
               canvas.height = img.height * scaleSize;
-
               const ctx = canvas.getContext('2d');
               ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-              
-              const base64String = canvas.toDataURL('image/jpeg', 0.7); // Compress
+              const base64String = canvas.toDataURL('image/jpeg', 0.7);
               onUpdateDay(selectedDay, { imageEvidence: base64String });
           };
           img.src = event.target?.result as string;
@@ -207,6 +205,13 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
       if (selectedDay) {
           onUpdateDay(selectedDay, { imageEvidence: undefined });
       }
+  };
+  
+  const updateBehavior = (kidName: string, score: number) => {
+      if (!selectedDay) return;
+      const currentDay = calendar[selectedDay - 1];
+      const newBehavior = { ...(currentDay.behavior || {}), [kidName]: score };
+      onUpdateDay(selectedDay, { behavior: newBehavior });
   };
 
   const filteredIdeas = savedIdeas.filter(idea => {
@@ -244,7 +249,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                 active:translate-y-1 active:border-b-0 active:border-r-0 active:shadow-none
               `}
             >
-              {/* Drawer Handle Visualization */}
               {!dayPlan.idea && (
                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-4 bg-[#2d1b14] rounded-full shadow-lg opacity-40"></div>
               )}
@@ -269,7 +273,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                   </div>
               </div>
 
-              {/* Special Day Badges */}
               {specialType === 'arrival' && !dayPlan.idea && (
                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
                         <span className="material-icons-round text-6xl text-blue-200">flight_land</span>
@@ -301,19 +304,29 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                     )}
                 </div>
               )}
+
+              {/* Behavior Icons in Grid */}
+              {dayPlan.idea && dayPlan.behavior && (
+                  <div className="flex gap-1 absolute bottom-1 right-1 z-10">
+                      {Object.entries(dayPlan.behavior).map(([name, score]) => (
+                          <span key={name} title={`${name}: ${score}`} className="text-xs bg-white/80 rounded-full px-0.5 shadow-sm">
+                              {getBehaviorEmoji(score as number)}
+                          </span>
+                      ))}
+                  </div>
+              )}
             </div>
           )})}
         </div>
       </div>
 
-      {/* Mobile/Desktop Detail Overlay/Sidebar */}
+      {/* Detail Overlay/Sidebar */}
       {selectedDay && (
           <div className="fixed inset-0 z-50 flex items-end lg:static lg:items-stretch lg:z-auto bg-black/60 lg:bg-transparent lg:w-96">
             <div 
                 className="w-full bg-[#fcfaf2] lg:border-4 lg:border-[#2d1b14] flex flex-col rounded-t-2xl lg:rounded-sm shadow-2xl lg:shadow-none h-[85vh] lg:h-auto overflow-hidden animate-slide-up lg:animate-none relative"
                 onClick={(e) => e.stopPropagation()} 
             >
-              {/* Screws for desktop sidebar look */}
               <div className="hidden lg:block absolute top-2 left-2 w-2 h-2 rounded-full bg-[#1a1a1a] opacity-50"></div>
               <div className="hidden lg:block absolute top-2 right-2 w-2 h-2 rounded-full bg-[#1a1a1a] opacity-50"></div>
 
@@ -336,7 +349,7 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                        <div className="flex justify-between items-start mb-3">
                             <h4 className="font-bold text-lg text-elf-dark pr-8 leading-snug font-serif">{calendar[selectedDay - 1].idea?.title}</h4>
                             <button 
-                                onClick={() => onUpdateDay(selectedDay, { idea: null, secretMessage: '', prepared: false, completed: false, imageEvidence: undefined })}
+                                onClick={() => onUpdateDay(selectedDay, { idea: null, secretMessage: '', prepared: false, completed: false, imageEvidence: undefined, behavior: undefined })}
                                 className="text-red-400 hover:text-red-600 p-1 absolute top-3 right-3"
                                 title="Leeren"
                             >
@@ -363,6 +376,42 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                              ))}
                            </div>
                        </div>
+                     </div>
+
+                     {/* Behavior Rating (Brav-o-Meter Input) */}
+                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                         <h5 className="font-bold text-[#2d1b14] mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+                            <span className="material-icons-round text-base text-elf-gold">stars</span>
+                            Brav-o-Meter (Heute)
+                        </h5>
+                        <div className="space-y-3">
+                            {elfConfig.kids.map((kid) => {
+                                const score = calendar[selectedDay - 1].behavior?.[kid.name] || 0;
+                                return (
+                                    <div key={kid.name} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
+                                        <div className="flex items-center gap-2">
+                                            <span className="material-icons-round text-slate-400">{kid.gender === 'girl' ? 'face_3' : 'face_6'}</span>
+                                            <span className="font-bold text-sm text-elf-dark truncate w-20">{kid.name}</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            {[1,2,3,4,5].map((val: number) => (
+                                                <button 
+                                                    key={val}
+                                                    onClick={() => updateBehavior(kid.name, val)}
+                                                    className={`w-7 h-7 flex items-center justify-center rounded-full text-sm transition-all ${
+                                                        score >= val 
+                                                        ? 'bg-elf-gold text-elf-dark shadow-sm scale-110' 
+                                                        : 'bg-slate-100 text-slate-300 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    {getBehaviorEmoji(val)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
                      </div>
 
                      {/* Organization Toggles */}
@@ -503,7 +552,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
           </div>
       )}
 
-      {/* Idea Picker Modal */}
       {showIdeaPicker && selectedDay && (
           <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-[#fcfaf2] w-full md:max-w-xl rounded shadow-2xl animate-slide-up border-4 border-[#2d1b14] flex flex-col max-h-[85vh]">
@@ -514,41 +562,14 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                       </button>
                   </div>
                   
-                  {/* Filter Tabs */}
                   <div className="px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar bg-[#2d1b14]">
-                      <button 
-                        onClick={() => setIdeaFilter('all')} 
-                        className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'all' ? 'text-elf-gold border-elf-gold bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}
-                      >
-                          ALLE IDEEN
-                      </button>
-                      <button 
-                        onClick={() => setIdeaFilter('arrival')} 
-                        className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'arrival' ? 'text-blue-300 border-blue-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}
-                      >
-                          EINZUG
-                      </button>
-                      <button 
-                        onClick={() => setIdeaFilter('departure')} 
-                        className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'departure' ? 'text-red-300 border-red-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}
-                      >
-                          ABSCHIED
-                      </button>
-                      <button 
-                        onClick={() => setIdeaFilter('normal')} 
-                        className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'normal' ? 'text-green-300 border-green-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}
-                      >
-                          STREICHE
-                      </button>
+                      <button onClick={() => setIdeaFilter('all')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'all' ? 'text-elf-gold border-elf-gold bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>ALLE IDEEN</button>
+                      <button onClick={() => setIdeaFilter('arrival')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'arrival' ? 'text-blue-300 border-blue-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>EINZUG</button>
+                      <button onClick={() => setIdeaFilter('departure')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'departure' ? 'text-red-300 border-red-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>ABSCHIED</button>
+                      <button onClick={() => setIdeaFilter('normal')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'normal' ? 'text-green-300 border-green-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>STREICHE</button>
                   </div>
 
                   <div className="overflow-y-auto p-4 space-y-3 bg-[#d4c5a5]">
-                      {filteredIdeas.length === 0 && (
-                          <div className="text-center py-10 opacity-60">
-                              <span className="material-icons-round text-4xl text-[#855E42] mb-2">search_off</span>
-                              <p className="text-[#2d1b14] font-bold">Nichts im Archiv gefunden.</p>
-                          </div>
-                      )}
                       {filteredIdeas.map(idea => (
                           <button 
                             key={idea.id}
@@ -572,7 +593,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
           </div>
       )}
 
-      {/* Desktop Sidebar: Saved Ideas */}
       <div className="hidden lg:flex w-72 bg-[#fcfaf2] border-l-4 border-[#2d1b14] flex-col h-full shadow-inner relative">
         <div className="absolute top-0 bottom-0 -left-1 w-1 bg-black/20 z-20"></div>
         <div className="p-4 border-b border-[#e6dac0] bg-[#f9f5e6]">
@@ -582,22 +602,24 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
             </h3>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#e6dac0]">
-              {savedIdeas.length === 0 && (
-                <p className="text-sm text-[#855E42] text-center py-8 px-4 italic">
-                  Die Akten sind leer.
-                </p>
-              )}
               {savedIdeas.map(idea => (
                 <div
                   key={idea.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, idea)}
                   onDragEnd={handleDragEnd}
-                  className="p-3 bg-white border border-[#d4c5a5] rounded shadow-sm cursor-grab active:cursor-grabbing hover:rotate-1 hover:shadow-md transition-all group relative"
+                  onClick={() => setExpandedIdeaId(expandedIdeaId === idea.id ? null : idea.id)}
+                  className="p-3 bg-white border border-[#d4c5a5] rounded shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative"
                 >
-                  <div className="w-2 h-2 rounded-full bg-red-800/20 absolute top-2 right-2"></div>
-                  <p className="font-bold text-sm text-elf-dark font-serif leading-tight mb-1">{idea.title}</p>
-                  <p className="text-xs text-slate-500 line-clamp-2">{idea.description}</p>
+                  <p className="font-bold text-sm text-elf-dark font-serif leading-tight mb-1 flex justify-between">
+                      {idea.title}
+                      <span className="material-icons-round text-sm opacity-50">{expandedIdeaId === idea.id ? 'expand_less' : 'expand_more'}</span>
+                  </p>
+                  {expandedIdeaId === idea.id && (
+                      <p className="text-xs text-slate-600 mt-2 leading-relaxed italic border-t border-slate-100 pt-2 animate-slide-up">
+                          {idea.description}
+                      </p>
+                  )}
                 </div>
               ))}
         </div>
