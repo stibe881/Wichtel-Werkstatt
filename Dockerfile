@@ -1,6 +1,9 @@
 # Stage 1: Build the React application
 FROM node:20-alpine AS build
 
+# Build argument for API key
+ARG GEMINI_API_KEY
+
 WORKDIR /app
 
 # Copy package.json and package-lock.json
@@ -11,6 +14,9 @@ RUN npm install
 
 # Copy the rest of the application files
 COPY . .
+
+# Set environment variable for build
+ENV GEMINI_API_KEY=${GEMINI_API_KEY}
 
 # Build the application
 RUN npm run build

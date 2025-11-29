@@ -1,5 +1,10 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      args:
+        - GEMINI_API_KEY=${GEMINI_API_KEY}
     ports:
       - "3050:80"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
