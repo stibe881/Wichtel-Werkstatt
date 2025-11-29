@@ -193,31 +193,29 @@ const App: React.FC = () => {
   };
 
   const completeSetup = async () => {
-      // Create the new state with isConfigured = true
       const newState = { ...state, isConfigured: true };
-
       setState(newState);
       setCurrentView(View.DASHBOARD);
 
-      // Immediately save to backend and local cache after setup
+      // Immediately save to local cache for instant UI feedback and offline resilience
+      try {
+        localStorage.setItem('wichtel_cached_state', JSON.stringify(newState));
+      } catch (e) {
+        console.error("Failed to save state to cache", e);
+      }
+
+      // Attempt to save to backend
       if (isAuthenticated && userId) {
           try {
-              console.log('Saving state to database for user:', userId);
-
               await fetch(`${API_URL}/api/state/${userId}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(newState),
               });
-              
-              localStorage.setItem('wichtel_cached_state', JSON.stringify(newState));
-
-              console.log('Setup data saved successfully');
           } catch (error) {
-              console.error('Failed to save setup data:', error);
+              console.error('Failed to save setup data to backend:', error);
+              // Optional: notify user that sync failed but data is saved locally
           }
-      } else {
-          console.error('Cannot save: not authenticated or no user ID');
       }
   };
 
