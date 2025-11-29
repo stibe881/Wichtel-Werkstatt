@@ -12,7 +12,7 @@ import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
-import { useDebounce } from './src/hooks/useDebounce';
+
 
 const API_URL = 'http://localhost:3001';
 const USER_ID = 'default_user';
@@ -87,7 +87,7 @@ const App: React.FC = () => {
 
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
-  const debouncedState = useDebounce(state, 1000);
+  
 
   // Fetch state from backend
   useEffect(() => {
@@ -117,21 +117,27 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  // Save state to backend
+  // Save state to backend with internal debouncing
   useEffect(() => {
-    // Only save if:
-    // 1. User is authenticated
-    // 2. Not currently loading
-    // 3. Has loaded initial data from backend (prevents saving DEFAULT_STATE on mount)
-    // 4. State is configured (prevents saving incomplete setup)
-    if (isAuthenticated && !isLoading && hasLoadedFromBackend && state.isConfigured) {
+    // Do not save the initial default state.
+    // Only save if the state is not the default reference and has been configured.
+    if (state === DEFAULT_STATE || !state.isConfigured || !isAuthenticated || !hasLoadedFromBackend) {
+      return;
+    }
+
+    const handler = setTimeout(() => {
       fetch(`${API_URL}/api/state/${USER_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(debouncedState),
+        body: JSON.stringify(state),
       });
-    }
-  }, [debouncedState, isAuthenticated]);
+    }, 1000);
+
+    // Cleanup function to cancel the timeout if the effect runs again
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [state, isAuthenticated, hasLoadedFromBackend]);
 
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [bossMode, setBossMode] = useState(false);
