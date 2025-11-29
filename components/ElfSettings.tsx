@@ -8,6 +8,7 @@ interface Props {
   onComplete?: () => void;
   archives?: ArchivedYear[];
   onArchiveYear?: () => void;
+  onLogout?: () => void;
 }
 
 const ELF_NAMES = [
@@ -222,6 +223,17 @@ const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onCom
                               <span className="material-icons-round">arrow_forward</span>
                           </button>
                       </div>
+                      {isSetup && onLogout && (
+                        <div className="text-center mt-6">
+                            <button
+                            type="button"
+                            onClick={onLogout}
+                            className="text-sm text-slate-500 hover:text-slate-700 hover:underline"
+                            >
+                            Abmelden und zur Startseite
+                            </button>
+                        </div>
+                      )}
                   </div>
               </div>
               <p className="text-center text-slate-400 text-xs mt-8 mb-4 font-serif italic">© WichtelWerkstatt • Offizielles Dokument</p>

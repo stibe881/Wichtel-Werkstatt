@@ -404,7 +404,7 @@ const App: React.FC = () => {
       return (
           <div className="h-full w-full bg-[#fcfaf2] overflow-y-auto bg-parchment">
             <div className="min-h-full flex flex-col items-center justify-center p-4 py-8">
-              <ElfSettings config={state.elf} onUpdate={updateElfConfig} isSetup={true} onComplete={completeSetup} />
+              <ElfSettings config={state.elf} onUpdate={updateElfConfig} isSetup={true} onComplete={completeSetup} onLogout={handleLogout} />
             </div>
           </div>
       );
