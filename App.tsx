@@ -77,6 +77,21 @@ const DEFAULT_STATE: AppState = {
   archives: []
 };
 
+const getInitialState = (): AppState => {
+  try {
+    const cachedState = localStorage.getItem('wichtel_cached_state');
+    if (cachedState) {
+      const parsed = JSON.parse(cachedState);
+      if (parsed && parsed.isConfigured) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load cached state", e);
+  }
+  return DEFAULT_STATE;
+};
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('wichtel_authenticated') === 'true';
@@ -85,7 +100,7 @@ const App: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(true);
 
-  const [state, setState] = useState<AppState>(DEFAULT_STATE);
+  const [state, setState] = useState<AppState>(getInitialState);
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   
 
@@ -134,11 +149,18 @@ const App: React.FC = () => {
     }
 
     const handler = setTimeout(() => {
+      // Save to backend
       fetch(`${API_URL}/api/state/${USER_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
       });
+      // Also save to localStorage
+      try {
+        localStorage.setItem('wichtel_cached_state', JSON.stringify(state));
+      } catch (e) {
+        console.error("Failed to save state to cache", e);
+      }
     }, 1000);
 
     // Cleanup function to cancel the timeout if the effect runs again
@@ -356,6 +378,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('wichtel_authenticated');
+    localStorage.removeItem('wichtel_cached_state'); // Clear cache
     setIsAuthenticated(false);
     setState(DEFAULT_STATE); // Reset state on logout
     setCurrentView(View.DASHBOARD);
