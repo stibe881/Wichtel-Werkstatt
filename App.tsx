@@ -95,23 +95,31 @@ const App: React.FC = () => {
       setIsLoading(true);
       fetch(`${API_URL}/api/state/${USER_ID}`)
         .then(res => {
-          if (res.ok) return res.json();
-          // If no state on backend, start with default
-          return DEFAULT_STATE;
+          if (res.ok) {
+            return res.json();
+          }
+          // For non-ok responses (404, 500), we'll let it be caught by .catch
+          // so we don't reset state unnecessarily.
+          throw new Error(`Failed to fetch: ${res.status}`);
         })
         .then(data => {
+            // Only update state if we received valid data.
+            // An empty object or null from the backend means new user, so use default.
             if (data && Object.keys(data).length > 0) {
                 setState(data);
             } else {
-                setState(DEFAULT_STATE);
+                setState(DEFAULT_STATE); // This is for a new user with no state on the backend.
             }
-            setHasLoadedFromBackend(true);
         })
-        .catch(() => {
-            setState(DEFAULT_STATE);
-            setHasLoadedFromBackend(true);
+        .catch((error) => {
+            console.error("Could not fetch state:", error);
+            // On error, we DO NOT reset the state. The user might be offline.
+            // They can continue, and the save effect will try to save later.
         })
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+            setHasLoadedFromBackend(true); // Always do this to unblock UI and saving
+            setIsLoading(false);
+        });
     } else {
       setIsLoading(false);
     }
