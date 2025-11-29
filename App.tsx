@@ -272,23 +272,25 @@ const App: React.FC = () => {
   };
 
     const handleAuth = (email: string, password: string, username?: string) => {
-
-      // Demo: Einfach authentifizieren ohne echte Validierung
-
       localStorage.setItem('wichtel_authenticated', 'true');
-
       if (username) {
-
         localStorage.setItem('wichtel_username', username);
-
         setState(DEFAULT_STATE);
-
+      } else {
+        // This is a login. Reload state from storage just in case.
+        const saved = localStorage.getItem('wichtel_werkstatt_v4');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setState(parsed); // Force reload of state
+          } catch(e) {
+            // If parsing fails, we'll end up with default state, which is what would happen anyway.
+            setState(DEFAULT_STATE);
+          }
+        }
       }
-
       setIsAuthenticated(true);
-
       setShowAuthModal(false);
-
     };
 
   const handleLogout = () => {
