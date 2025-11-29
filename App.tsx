@@ -8,6 +8,8 @@ import ShoppingList from './components/ShoppingList';
 import Recipes from './components/Recipes';
 import Printables from './components/Printables';
 import KidsZone from './components/KidsZone';
+import LandingPage from './components/LandingPage';
+import AuthModal from './components/AuthModal';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
 
@@ -72,6 +74,12 @@ const DEFAULT_STATE: AppState = {
 };
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('wichtel_authenticated') === 'true';
+  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
   const [state, setState] = useState<AppState>(() => {
     const saved = localStorage.getItem('wichtel_werkstatt_v4');
     if (saved) {
@@ -80,9 +88,9 @@ const App: React.FC = () => {
             // Default gender for backward compatibility
             const kids = parsed.elf?.kids?.map((k: any) => ({ ...k, gender: k.gender || 'boy' })) || [];
             const elf = parsed.elf ? { ...parsed.elf, kids } : DEFAULT_CONFIG;
-            
+
             if (parsed.isConfigured === undefined) {
-                return { ...parsed, isConfigured: true, archives: parsed.archives || [], elf }; 
+                return { ...parsed, isConfigured: true, archives: parsed.archives || [], elf };
             }
             if (!parsed.archives) {
                 return { ...parsed, archives: [], elf };
@@ -102,7 +110,7 @@ const App: React.FC = () => {
   const [panicText, setPanicText] = useState('');
   const [panicInstruction, setPanicInstruction] = useState('');
   const [generatingExcuse, setGeneratingExcuse] = useState(false);
-  
+
   // Weather state
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
 
@@ -263,10 +271,52 @@ const App: React.FC = () => {
       return count === 0 ? 0 : total / count;
   };
 
+  const handleAuth = (email: string, password: string, username?: string) => {
+    // Demo: Einfach authentifizieren ohne echte Validierung
+    localStorage.setItem('wichtel_authenticated', 'true');
+    if (username) {
+      localStorage.setItem('wichtel_username', username);
+    }
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('wichtel_authenticated');
+    setIsAuthenticated(false);
+    setCurrentView(View.DASHBOARD);
+  };
+
+  const handleLogin = () => {
+    setAuthMode('login');
+    setShowAuthModal(true);
+  };
+
+  const handleRegister = () => {
+    setAuthMode('register');
+    setShowAuthModal(true);
+  };
+
   const daysPrepared = state.calendar.filter(d => d.prepared).length;
   const nextOpenDay = state.calendar.find(d => !d.completed)?.day || 24;
   const currentDayPlan = state.calendar[nextOpenDay - 1];
-  
+
+  // Show landing page if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+        {showAuthModal && (
+          <AuthModal
+            mode={authMode}
+            onClose={() => setShowAuthModal(false)}
+            onSubmit={handleAuth}
+          />
+        )}
+      </>
+    );
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case View.SETTINGS:
@@ -531,6 +581,7 @@ const App: React.FC = () => {
             
             <NavButton view={View.SETTINGS} icon="settings" label="Konfiguration" current={currentView} onClick={setCurrentView} />
             <button onClick={() => setBossMode(true)} className="w-full flex items-center gap-4 px-4 py-2 mt-2 text-xs text-slate-500 hover:text-white transition-colors opacity-50 hover:opacity-100"><span className="material-icons-round">visibility_off</span><span className="hidden lg:block">Chef! (Boss Mode)</span></button>
+            <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-2 mt-auto text-xs text-elf-red hover:text-white transition-colors"><span className="material-icons-round">logout</span><span className="hidden lg:block">Abmelden</span></button>
         </div>
       </aside>
 
