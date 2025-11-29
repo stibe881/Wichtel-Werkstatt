@@ -19,7 +19,7 @@ const ELF_NAMES = [
   "Knopf", "Pixel", "Cookie", "Frosty", "Barnaby"
 ];
 
-const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onComplete, archives = [], onArchiveYear }) => {
+const ElfSettings: React.FC<Props> = ({ config, onUpdate, isSetup = false, onComplete, archives = [], onArchiveYear, onLogout }) => {
   const [archiveSearchTerm, setArchiveSearchTerm] = React.useState('');
 
   const handleChange = (field: keyof ElfConfig, value: any) => {
