@@ -22,3 +22,5 @@ services:
       - backend
     env_file:
       - .env
+    environment:
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
