@@ -16,11 +16,11 @@ services:
   frontend:
     build:
       context: .
+      args:
+        VITE_GEMINI_API_KEY: ${VITE_GEMINI_API_KEY}
     ports:
       - "3050:80"
     depends_on:
       - backend
     env_file:
       - .env
-    environment:
-      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}

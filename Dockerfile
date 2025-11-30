@@ -2,7 +2,7 @@
 FROM node:20-alpine AS build
 
 # Build argument for API key
-ARG GEMINI_API_KEY
+ARG VITE_GEMINI_API_KEY
 
 WORKDIR /app
 
@@ -15,11 +15,8 @@ RUN npm install
 # Copy the rest of the application files
 COPY . .
 
-# Set environment variable for build
-ENV GEMINI_API_KEY=${GEMINI_API_KEY}
-
 # Build the application
-RUN npm run build
+RUN VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY} npm run build
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:1.21.3-alpine
