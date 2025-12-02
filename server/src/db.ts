@@ -17,7 +17,7 @@ export const initDB = async () => {
     console.log('Connected to database');
 
     await connection.query(`
-      CREATE TABLE IF NOT EXISTS app_state (
+      CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(255) PRIMARY KEY,
         state_json JSON NOT NULL
       );
@@ -26,7 +26,7 @@ export const initDB = async () => {
     // For simplicity, we'll use a single row with a static ID to store the state.
     // In a real multi-user app, this ID would be linked to a user.
     await connection.query(`
-      INSERT IGNORE INTO app_state (id, state_json) VALUES ('default_user', '{}');
+      INSERT IGNORE INTO users (id, state_json) VALUES ('default_user', '{}');
     `);
 
     connection.release();
@@ -38,7 +38,7 @@ export const initDB = async () => {
 };
 
 export const getState = async (userId: string): Promise<any> => {
-  const [rows]: any[] = await pool.query('SELECT state_json FROM app_state WHERE id = ?', [userId]);
+  const [rows]: any[] = await pool.query('SELECT state_json FROM users WHERE id = ?', [userId]);
   if (rows.length > 0) {
     const stateJson = rows[0].state_json;
     // Parse JSON string if it's a string, otherwise return as-is
@@ -49,7 +49,11 @@ export const getState = async (userId: string): Promise<any> => {
 
 export const saveState = async (userId: string, state: any): Promise<void> => {
   const stateJson = JSON.stringify(state);
-  await pool.query('UPDATE app_state SET state_json = ? WHERE id = ?', [stateJson, userId]);
+  // This will insert a new row if the userId doesn't exist, or update the existing one if it does.
+  await pool.query(
+    'INSERT INTO users (id, state) VALUES (?, ?) ON DUPLICATE KEY UPDATE state = ?',
+    [userId, stateJson, stateJson]
+  );
 };
 
 export default pool;
