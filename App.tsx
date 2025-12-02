@@ -14,7 +14,7 @@ import { generateElfExcuse, generateLatePreparationSolution } from './services/g
 import { getWeather } from './services/weatherService';
 
 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://api.wichtel-werkstatt.ch';
 const USER_ID = 'default_user';
 
 const STARTER_IDEAS: Idea[] = [
