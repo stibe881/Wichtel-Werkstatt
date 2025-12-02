@@ -9,19 +9,20 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(bodyParser.json({ limit: '5mb' })); // Increase limit for potentially large state
 
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.send({ status: 'ok' });
 });
 
 // Get state for a user
-app.get('/api/state/:userId', async (req, res) => {
+app.get('/state/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const state = await getState(userId);
         if (state) {
             res.json(state);
         } else {
-            res.status(404).send({ error: 'State not found for user.' });
+            // If user does not exist, return an empty object to let the client initialize
+            res.json({});
         }
     } catch (error) {
         console.error('Error getting state:', error);
@@ -30,7 +31,7 @@ app.get('/api/state/:userId', async (req, res) => {
 });
 
 // Save state for a user
-app.post('/api/state/:userId', async (req, res) => {
+app.post('/state/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const state = req.body;

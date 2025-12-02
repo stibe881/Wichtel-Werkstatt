@@ -111,7 +111,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && userId) {
       setIsLoading(true);
-      fetch(`${API_URL}/api/state/${encodeURIComponent(userId)}`)
+      fetch(`${API_URL}/state/${encodeURIComponent(userId)}`)
         .then(res => {
           if (res.ok) {
             return res.json();
@@ -153,7 +153,7 @@ const App: React.FC = () => {
 
     const handler = setTimeout(() => {
       // Save to backend
-      fetch(`${API_URL}/api/state/${encodeURIComponent(userId)}`, {
+      fetch(`${API_URL}/state/${encodeURIComponent(userId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
@@ -207,7 +207,7 @@ const App: React.FC = () => {
       // Attempt to save to backend
       if (isAuthenticated && userId) {
           try {
-              await fetch(`${API_URL}/api/state/${encodeURIComponent(userId)}`, {
+              await fetch(`${API_URL}/state/${encodeURIComponent(userId)}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(newState),
