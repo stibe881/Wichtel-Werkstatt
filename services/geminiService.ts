@@ -58,15 +58,34 @@ export const chatWithIdeaAssistant = async (
   const kidsDesc = getKidsDescription(elf, kids);
   const historyText = history.slice(-4).map(h => `${h.role === 'user' ? 'Elternteil' : 'Wichtel-Management'}: ${h.text}`).join('\n');
 
+  const personalityInfo = elf.personality
+    ? `Persönlichkeit: Charakterzüge: ${elf.personality.traits?.join(', ')}. Lieblingsaktivität: ${elf.personality.favoriteActivity}. Besonderheit: ${elf.personality.quirk}.`
+    : '';
+
   const prompt = `
     Du bist das 'Wichtel-Management' (Zentrale). Du hilfst den Eltern von ${kidsDesc}, Ideen für ihren "Elf on the Shelf" (${elf.name}) zu finden.
+
+    ${personalityInfo ? `WICHTEL-CHARAKTER: ${elf.name} - ${personalityInfo}` : ''}
+
     Kontext des Chats:
     ${historyText}
     Aktuelle Anfrage: "${userMessage}"
-    
+
     Aufgabe: Antworte freundlich und generiere 2-4 passende Ideen.
     Wichtig: Vermeide Ideen mit diesen Titeln: ${excludeTitles.join(', ')}.
     Achte auf das Alter der Kinder.
+
+    SICHERHEITS- & QUALITÄTS-RICHTLINIEN:
+    - KEINE gefährlichen Aktivitäten: KEIN Feuer, KEIN Wasserchaos, KEINE teuren Schäden
+    - Sauberkeit: Chaos muss in 10-15 Minuten aufräumbar sein (keine übertriebenen Sauereien)
+    - Alles muss kinderfreundlich und realistisch umsetzbar sein
+    - Ideen MÜSSEN zum Charakter von ${elf.name} passen${personalityInfo ? ' (siehe oben)' : ''}
+    - Gib IMMER klare Hinweise für Eltern zur Vorbereitung (was sie brauchen/machen müssen)
+
+    STRUKTUR DER IDEEN-BESCHREIBUNG:
+    1. ZUERST: Brief-Text vom Wichtel an die Kinder (in Ich-Perspektive, im Charakter von ${elf.name})
+    2. DANN: Die konkrete Mission/Aufgabe für die Kinder
+
     Setze den 'type' auf 'arrival' oder 'departure', wenn es passt, sonst 'normal'.
     Output-Schema: { "reply": "Deine Antwort", "ideas": [...] }
   `;
@@ -169,12 +188,30 @@ export const generateDailyMessage = async (
     kids: Kid[],
     idea: Idea
   ): Promise<string> => {
-    const topic = `Ich habe heute Folgendes vor oder erlebt: "${idea.title}".`;
-    const tone = 'geheimnisvoll und freundlich';
-    const voice = 'magisch';
-  
-    // Reusing the existing generateElfLetter function
-    return generateElfLetter(elf, kids, topic, tone, voice);
+    const kidsDesc = getKidsDescription(elf, kids);
+    const personalityInfo = elf.personality
+      ? `Persönlichkeit: ${elf.personality.traits?.join(', ')}. Lieblingsaktivität: ${elf.personality.favoriteActivity}. Besonderheit: ${elf.personality.quirk}.`
+      : '';
+
+    const prompt = `
+      Du bist der Wichtel ${elf.name}. Schreibe einen kurzen Brief an die Kinder: ${kidsDesc}.
+      ${personalityInfo ? `Dein Charakter: ${personalityInfo}` : ''}
+
+      Thema: Ich habe heute Folgendes vor oder erlebt: "${idea.title}".
+      Beschreibung: ${idea.description}
+
+      WICHTIG:
+      - Schreibe aus der Ich-Perspektive als Wichtel ${elf.name}
+      - Bleib im Charakter${personalityInfo ? ' (siehe oben)' : ''}
+      - Stil: geheimnisvoll, freundlich und magisch
+      - STRUKTUR: 1. Brief-Text vom Wichtel, 2. Mission/Aufgabe für die Kinder
+    `;
+
+    try {
+      return await generateContent(prompt);
+    } catch(e) {
+        return "Der Wichtel hat gerade Schreibblockade...";
+    }
   };
 
 export const generateShoppingListEnhancement = async (items: string[]): Promise<string[]> => {
