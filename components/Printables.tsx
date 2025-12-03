@@ -35,16 +35,24 @@ const printHtml = (title: string, htmlContent: string) => {
     doc.write(`<html><head><title>${title}</title></head><body>${htmlContent}</body></html>`);
     doc.close();
 
+    const handlePrint = () => {
+        try {
+            const result = iframe.contentWindow?.document.execCommand('print', false, undefined);
+            if (!result) {
+                iframe.contentWindow?.print();
+            }
+        } catch(e) {
+            iframe.contentWindow?.print();
+        }
+    }
+
     iframe.onload = () => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        // The iframe is removed in the onafterprint event
+        handlePrint();
     };
     
-    // Fallback for browsers that don't fire onload for srcdoc iframes quickly
+    // Fallback for browsers that don't fire onload quickly
     setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
+        handlePrint();
     }, 500);
 
     iframe.contentWindow?.addEventListener('afterprint', () => {
@@ -60,42 +68,114 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
     const assignedKids = kids.filter(k => elfConfig.kidIds.includes(k.id));
     const kidsNames = assignedKids.map(k => k.name).join(' & ');
 
-    // ... (rest of the component logic remains the same, but calls printHtml instead of window.open)
+    const getPrintableContent = (id: string): string => {
+        const baseCss = `
+            body { font-family: sans-serif; }
+            .page { width: 180mm; height: 267mm; margin: 0 auto; padding: 20mm; border: 1px solid #ccc; box-sizing: border-box; }
+            .header { text-align: center; font-family: serif; color: #D42426; }
+            .content { margin-top: 20px; font-size: 14pt; line-height: 1.6; }
+            .signature { font-family: 'Brush Script MT', cursive; font-size: 24pt; color: #D42426; }
+        `;
 
-    const printCertificate = () => {
-        const html = `...`; // The full HTML for the certificate
-        printHtml("Urkunde", html);
+        switch (id) {
+            case 'cert': return `
+                <style>
+                    ${baseCss}
+                    .page { border: 10px solid #c0a060; background-color: #fdfaf2; }
+                    .header h1 { font-size: 42pt; margin: 0; }
+                    .header h2 { font-size: 22pt; margin-top: 10px; color: #2d1b14; }
+                    .content { text-align: center; }
+                    .recipient { font-size: 28pt; font-weight: bold; color: #2d1b14; margin: 30px 0; font-family: serif; }
+                </style>
+                <div class="page">
+                    <div class="header">
+                        <h2>Offizielles Dokument vom Nordpol</h2>
+                        <h1>Brav-Urkunde</h1>
+                    </div>
+                    <div class="content">
+                        Hiermit wird feierlich bestätigt, dass
+                        <div class="recipient">${kidsNames || 'die Kinder'}</div>
+                        im vergangenen Zeitraum außergewöhnlich brav war(en).
+                        <br/><br/>
+                        Weiter so!
+                        <br/><br/>
+                        <div class="signature">${elfConfig.name}</div>
+                        (i.A. des Weihnachtsmanns)
+                    </div>
+                </div>`;
+            case 'warn': return `
+                 <style>
+                    ${baseCss}
+                    .page { border: 5px dashed #2d1b14; background-color: #fff0f0; }
+                    .header h1 { font-size: 48pt; margin: 0; color: #b91c1c; }
+                    .content { text-align: center; font-size: 18pt; }
+                    .reason { font-weight: bold; text-decoration: underline; margin: 20px; }
+                </style>
+                <div class="page">
+                    <div class="header">
+                        <h1>ACHTUNG!</h1>
+                        <h2>Offizielle Verwarnung vom Nordpol</h2>
+                    </div>
+                    <div class="content">
+                        Mir ist zu Ohren gekommen, dass es Probleme gibt beim Thema:
+                        <div class="reason">${warningReason}</div>
+                        Bitte verbessert euch, sonst muss ich dem Weihnachtsmann davon berichten!
+                        <br/><br/>
+                        <div class="signature">${elfConfig.name}</div>
+                        (In Sorge)
+                    </div>
+                </div>`;
+            case 'adopt': return `
+                <style>
+                    ${baseCss}
+                    .page { border: 5px solid #4caf50; background-color: #f2fff2; }
+                    .header h1 { font-size: 38pt; }
+                    .content { font-size: 12pt; }
+                    .elf-name { font-size: 24pt; font-weight: bold; color: #D42426; }
+                </style>
+                <div class="page">
+                    <div class="header">
+                        <h1>Wichtel-Adoptionsurkunde</h1>
+                    </div>
+                    <div class="content">
+                        Hiermit adoptiert die Familie von <strong>${kidsNames}</strong> feierlich den Wichtel
+                        <br/><br/>
+                        <div class="elf-name">${elfConfig.name}</div>
+                        <br/>
+                        für die Weihnachtszeit. Wir versprechen, gut auf ihn aufzupassen, an seine Magie zu glauben und jeden Morgen nach seinen nächtlichen Abenteuern zu suchen.
+                        <br/><br/><br/>
+                        Unterschrieben,<br/>
+                        Die Familie & Wichtel ${elfConfig.name}
+                    </div>
+                </div>`;
+            case 'color': return `
+                <style>
+                    ${baseCss}
+                    .page { text-align: center; }
+                    img { width: 100%; max-width: 600px; height: auto; margin-top: 20px; }
+                </style>
+                <div class="page">
+                    <h1>Malvorlage</h1>
+                    <p>Liebe Grüße vom Nordpol! Hier ist etwas zum Ausmalen für dich/euch.</p>
+                    <img src="https://i.imgur.com/3d6Qz6c.png" alt="Wichtel zum Ausmalen"/>
+                    <p>Dein ${elfConfig.name}</p>
+                </div>
+            `;
+            default: return `<h1>Unbekannte Vorlage</h1>`;
+        }
     };
-    
-    // ... similar wrappers for all other print functions
 
     const handlePrint = (id: string) => {
-        // This function will now generate the HTML and call printHtml
-        // For brevity, the full HTML generation for each printable is omitted here,
-        // but it would be the same content as in the previous version.
-        let title = "";
-        let content = "";
-        switch (id) {
-            case 'cert': 
-                title = "Urkunde";
-                content = `... HTML for certificate with ${kidsNames} and ${elfConfig.name} ...`;
-                break;
-            case 'warn':
-                title = "Warnung";
-                content = `... HTML for warning with ${warningReason} ...`;
-                break;
-            // Add all other cases...
-        }
-        // A placeholder for the actual HTML content generation
-        if (title) {
-            printHtml(title, `<h1>${title}</h1><p>Inhalt für ${id} wird hier generiert.</p>`);
-        }
+        const content = getPrintableContent(id);
+        const title = ITEMS.find(i => i.id === id)?.title || 'Drucksache';
+        printHtml(title, content);
     };
 
-
     const ITEMS: PrintableItem[] = [
-        { id: 'cert', title: 'Brav-Urkunde', description: 'Offizielle Bestätigung vom Nordpol.', icon: 'workspace_premium', category: 'official', colorClass: 'border-elf-gold bg-[#fffdf5]' },
-        // ... all other items
+        { id: 'cert', title: 'Brav-Urkunde', description: 'Offizielle Bestätigung für besonders liebe Kinder.', icon: 'workspace_premium', category: 'official', colorClass: 'border-elf-gold bg-[#fffdf5]' },
+        { id: 'warn', title: 'Offizielle Warnung', description: 'Ein ernstes Wort, wenn mal was nicht rund läuft.', icon: 'gpp_bad', category: 'official', colorClass: 'border-red-700 bg-red-50' },
+        { id: 'adopt', title: 'Adoptions-Urkunde', description: 'Um den Wichtel feierlich in der Familie willkommen zu heißen.', icon: 'favorite', category: 'official', colorClass: 'border-green-700 bg-green-50' },
+        { id: 'color', title: 'Malvorlage', description: 'Eine lustige Wichtel-Malvorlage für zwischendurch.', icon: 'palette', category: 'fun', colorClass: 'border-blue-500 bg-blue-50' },
     ];
 
     const displayedItems = ITEMS.filter(item => filter === 'all' || item.category === filter);
@@ -118,6 +198,7 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
                                         value={warningReason}
                                         onChange={(e) => setWarningReason(e.target.value)}
                                         className="w-full p-2 text-sm border border-black/20 rounded bg-white/50"
+                                        placeholder="Grund für die Warnung..."
                                     />
                                 </div>
                             )}
