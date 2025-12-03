@@ -1,15 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { DayPlan, Idea, ElfConfig } from '../types';
+import { CalendarDay, Idea, ElfConfig, Kid } from '../types';
 import { generateDailyMessage } from '../services/geminiService';
 
 interface Props {
-  calendar: DayPlan[];
+  calendar: CalendarDay[];
   savedIdeas: Idea[];
-  onUpdateDay: (day: number, updates: Partial<DayPlan>) => void;
+  onUpdateDay: (day: number, updates: Partial<CalendarDay>) => void;
   elfConfig: ElfConfig;
+  kids: Kid[]; // Added kids prop
 }
 
-const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfig }) => {
+const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfig, kids }) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [draggedIdea, setDraggedIdea] = useState<Idea | null>(null);
   const [draggedFromDay, setDraggedFromDay] = useState<number | null>(null);
@@ -22,8 +23,12 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
 
   // Helper to check for Special Days
   const getSpecialDayType = (day: number) => {
+      // Ensure elfConfig and its dates are valid before parsing
+      if (!elfConfig || !elfConfig.arrivalDate || !elfConfig.departureDate) {
+          return null;
+      }
       const arrivalDate = new Date(elfConfig.arrivalDate);
-      const isArrival = arrivalDate.getDate() === day && arrivalDate.getMonth() === 11;
+      const isArrival = arrivalDate.getDate() === day && arrivalDate.getMonth() === 11; // Month is 0-indexed (11 for December)
       
       const departureDate = new Date(elfConfig.departureDate);
       const isDeparture = departureDate.getDate() === day && departureDate.getMonth() === 11;
@@ -44,11 +49,7 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
 
   const handleDragStart = (e: React.DragEvent, idea: Idea, fromDay?: number) => {
     setDraggedIdea(idea);
-    if (fromDay) {
-        setDraggedFromDay(fromDay);
-    } else {
-        setDraggedFromDay(null);
-    }
+    setDraggedFromDay(fromDay || null);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(idea));
   };
@@ -81,7 +82,7 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
     setDraggedFromDay(null);
   };
 
-  const handleGenerateMessage = async (dayPlan: DayPlan) => {
+  const handleGenerateMessage = async (dayPlan: CalendarDay) => {
     if (!dayPlan.idea) return;
     setGeneratingMessage(true);
     const msg = await generateDailyMessage(elfConfig, dayPlan.idea);
@@ -207,10 +208,10 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
       }
   };
   
-  const updateBehavior = (kidName: string, score: number) => {
+  const updateBehavior = (kidId: string, score: number) => { // Changed kidName to kidId
       if (!selectedDay) return;
       const currentDay = calendar[selectedDay - 1];
-      const newBehavior = { ...(currentDay.behavior || {}), [kidName]: score };
+      const newBehavior = { ...(currentDay.behavior || {}), [kidId]: score };
       onUpdateDay(selectedDay, { behavior: newBehavior });
   };
 
@@ -256,7 +257,11 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
               <div className="flex justify-between items-start z-10 relative">
                   <div className={`
                     w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-lg border-2 shadow-inner
-                    ${dayPlan.idea ? 'bg-elf-red text-white border-red-800' : 'bg-[#5d4037] text-amber-100/50 border-[#2d1b14]'}
+                    ${dayPlan.idea 
+                        ? 'bg-elf-red text-white border-red-800' 
+                        : specialType === 'arrival' ? 'bg-blue-500 text-white border-blue-800'
+                        : specialType === 'departure' ? 'bg-red-500 text-white border-red-800'
+                        : 'bg-[#5d4037] text-amber-100/50 border-[#2d1b14]'}
                   `}>
                     {dayPlan.day}
                   </div>
@@ -274,13 +279,15 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
               </div>
 
               {specialType === 'arrival' && !dayPlan.idea && (
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                        <span className="material-icons-round text-6xl text-blue-200">flight_land</span>
+                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-40 text-blue-200">
+                        <span className="material-icons-round text-6xl">flight_land</span>
+                        <span className="text-sm font-bold">Einzug</span>
                    </div>
               )}
                {specialType === 'departure' && !dayPlan.idea && (
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                        <span className="material-icons-round text-6xl text-red-200">flight_takeoff</span>
+                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-40 text-red-200">
+                        <span className="material-icons-round text-6xl">flight_takeoff</span>
+                        <span className="text-sm font-bold">Abschied</span>
                    </div>
               )}
               
@@ -308,11 +315,13 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
               {/* Behavior Icons in Grid */}
               {dayPlan.idea && dayPlan.behavior && (
                   <div className="flex gap-1 absolute bottom-1 right-1 z-10">
-                      {Object.entries(dayPlan.behavior).map(([name, score]) => (
-                          <span key={name} title={`${name}: ${score}`} className="text-xs bg-white/80 rounded-full px-0.5 shadow-sm">
+                      {Object.entries(dayPlan.behavior).map(([kidId, score]) => {
+                          const kid = kids.find(k => k.id === kidId);
+                          return (
+                          <span key={kidId} title={`${kid?.name || kidId}: ${score}`} className="text-xs bg-white/80 rounded-full px-0.5 shadow-sm">
                               {getBehaviorEmoji(score as number)}
                           </span>
-                      ))}
+                      )})}
                   </div>
               )}
             </div>
@@ -385,10 +394,10 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                             Brav-o-Meter (Heute)
                         </h5>
                         <div className="space-y-3">
-                            {elfConfig.kids.map((kid) => {
-                                const score = calendar[selectedDay - 1].behavior?.[kid.name] || 0;
+                            {kids.map((kid) => { // Changed from elfConfig.kids to kids
+                                const score = calendar[selectedDay - 1].behavior?.[kid.id] || 0; // Changed kid.name to kid.id
                                 return (
-                                    <div key={kid.name} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
+                                    <div key={kid.id} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
                                         <div className="flex items-center gap-2">
                                             <span className="material-icons-round text-slate-400">{kid.gender === 'girl' ? 'face_3' : 'face_6'}</span>
                                             <span className="font-bold text-sm text-elf-dark truncate w-20">{kid.name}</span>
@@ -397,7 +406,7 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                                             {[1,2,3,4,5].map((val: number) => (
                                                 <button 
                                                     key={val}
-                                                    onClick={() => updateBehavior(kid.name, val)}
+                                                    onClick={() => updateBehavior(kid.id, val)} // Changed kid.name to kid.id
                                                     className={`w-7 h-7 flex items-center justify-center rounded-full text-sm transition-all ${
                                                         score >= val 
                                                         ? 'bg-elf-gold text-elf-dark shadow-sm scale-110' 
@@ -549,47 +558,6 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
                  )}
               </div>
             </div>
-          </div>
-      )}
-
-      {showIdeaPicker && selectedDay && (
-          <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-[#fcfaf2] w-full md:max-w-xl rounded shadow-2xl animate-slide-up border-4 border-[#2d1b14] flex flex-col max-h-[85vh]">
-                  <div className="p-4 border-b-2 border-[#e6dac0] flex justify-between items-center bg-[#f9f5e6]">
-                      <h3 className="font-bold text-xl text-elf-dark font-serif">Bauplan auswählen</h3>
-                      <button onClick={() => setShowIdeaPicker(false)} className="p-2 hover:bg-[#e6dac0] rounded-full">
-                          <span className="material-icons-round">close</span>
-                      </button>
-                  </div>
-                  
-                  <div className="px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar bg-[#2d1b14]">
-                      <button onClick={() => setIdeaFilter('all')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'all' ? 'text-elf-gold border-elf-gold bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>ALLE IDEEN</button>
-                      <button onClick={() => setIdeaFilter('arrival')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'arrival' ? 'text-blue-300 border-blue-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>EINZUG</button>
-                      <button onClick={() => setIdeaFilter('departure')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'departure' ? 'text-red-300 border-red-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>ABSCHIED</button>
-                      <button onClick={() => setIdeaFilter('normal')} className={`px-3 py-1 text-xs rounded font-bold whitespace-nowrap transition-colors border-b-2 ${ideaFilter === 'normal' ? 'text-green-300 border-green-300 bg-white/10' : 'text-amber-100/50 border-transparent hover:text-amber-100'}`}>STREICHE</button>
-                  </div>
-
-                  <div className="overflow-y-auto p-4 space-y-3 bg-[#d4c5a5]">
-                      {filteredIdeas.map(idea => (
-                          <button 
-                            key={idea.id}
-                            onClick={() => handleSelectIdea(idea)}
-                            className="w-full text-left p-4 rounded border-2 border-[#fcfaf2] hover:border-[#855E42] bg-[#fcfaf2] hover:bg-white transition-all group relative overflow-hidden shadow-md"
-                          >
-                              {idea.type === 'arrival' && <div className="absolute top-0 right-0 bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-bl font-bold">EINZUG</div>}
-                              {idea.type === 'departure' && <div className="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-bl font-bold">ABSCHIED</div>}
-                              
-                              <div className="font-bold text-elf-dark font-serif text-lg group-hover:text-[#855E42]">{idea.title}</div>
-                              <div className="text-sm text-slate-600 mt-1 line-clamp-2 leading-relaxed">{idea.description}</div>
-                              <div className="flex gap-2 mt-3 pt-2 border-t border-slate-100">
-                                  {idea.materials.slice(0,3).map((m,i) => (
-                                      <span key={i} className="text-[10px] bg-[#e6dac0] px-1.5 py-0.5 rounded text-[#5d4037] uppercase font-bold tracking-wide">{m}</span>
-                                  ))}
-                              </div>
-                          </button>
-                      ))}
-                  </div>
-              </div>
           </div>
       )}
 

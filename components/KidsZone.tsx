@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import Recipes from './Recipes';
 import { getWeather } from '../services/weatherService';
-import { ElfConfig, DayPlan } from '../types';
+import { ElfConfig, CalendarDay, Kid } from '../types'; // This line is different from the original search and file content.
 
 interface Props {
-    elfConfig?: ElfConfig;
-    calendar?: DayPlan[];
+    elfConfig: ElfConfig;
+    calendar?: CalendarDay[]; // Renamed from DayPlan to CalendarDay
+    kids: Kid[]; // Added kids prop
     onExit?: () => void;
 }
 
-const KidsZone: React.FC<Props> = ({ elfConfig, calendar, onExit }) => {
+const KidsZone: React.FC<Props> = ({ elfConfig, calendar, kids, onExit }) => {
     const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
     const [clickCount, setClickCount] = useState(0);
 
@@ -35,17 +36,17 @@ const KidsZone: React.FC<Props> = ({ elfConfig, calendar, onExit }) => {
     };
 
     // Calculate Behavior Score
-    const calculateScore = (kidName: string) => {
+    const calculateScore = (kidId: string) => {
         if (!calendar) return 50;
         let total = 0;
         let count = 0;
         calendar.forEach(day => {
-            if (day.behavior && day.behavior[kidName]) {
-                total += day.behavior[kidName];
+            if (day.behavior && day.behavior[kidId]) {
+                total += day.behavior[kidId];
                 count++;
             }
         });
-        return count === 0 ? 50 : (total / 5) * 100;
+        return count === 0 ? 50 : (total / count) * 100;
     };
 
     return (
@@ -100,10 +101,10 @@ const KidsZone: React.FC<Props> = ({ elfConfig, calendar, onExit }) => {
                             Wie brav seid ihr?
                         </div>
                         <div className="mt-4 grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
-                            {elfConfig.kids.map(kid => {
-                                const percent = calculateScore(kid.name);
+                            {kids.filter(k => elfConfig.kidIds.includes(k.id)).map(kid => { // Filter kids by elfConfig.kidIds
+                                const percent = calculateScore(kid.id); // Changed kid.name to kid.id
                                 return (
-                                    <div key={kid.name} className="bg-black/30 p-3 sm:p-4 rounded-xl border border-white/10">
+                                    <div key={kid.id} className="bg-black/30 p-3 sm:p-4 rounded-xl border border-white/10">
                                         <div className="flex items-center gap-3 mb-3">
                                             <span className="material-icons-round text-yellow-400 text-2xl sm:text-3xl">{kid.gender === 'girl' ? 'face_3' : 'face_6'}</span>
                                             <span className="text-lg sm:text-xl font-bold text-amber-100">{kid.name}</span>

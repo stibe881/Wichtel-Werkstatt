@@ -10,6 +10,7 @@ import Printables from './components/Printables';
 import KidsZone from './components/KidsZone';
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
+import Dashboard from './components/Dashboard';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
 
@@ -185,16 +186,23 @@ const Content: React.FC<{ currentView: View, state: AppState, setState: React.Di
     switch (currentView) {
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
-        // Other views will be implemented next
-        // case View.IDEAS: return <IdeaGenerator ... />;
-        // case View.CALENDAR: return <Calendar ... />;
+        case View.IDEAS:
+            return <IdeaGenerator elfConfig={activeElf} onAddIdea={(idea) => setState(prev => ({...prev, savedIdeas: [...prev.savedIdeas, idea]}))} existingIdeas={state.savedIdeas} />;
+        case View.CALENDAR:
+            return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={(day, updates) => setState(prev => ({...prev, calendar: prev.calendar.map(d => d.day === day ? {...d, ...updates} : d)}))} elfConfig={activeElf} kids={state.kids} />;
+        case View.LETTERS:
+            return <LetterGenerator elfConfig={activeElf} />;
+        case View.SHOPPING:
+            return <ShoppingList items={state.shoppingList} onUpdateItems={(items) => setState(prev => ({...prev, shoppingList: items}))} />;
+        case View.RECIPES:
+            return <Recipes />;
+        case View.PRINTABLES:
+            return <Printables elfConfig={activeElf} />;
+        case View.KIDS_ZONE:
+            return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setCurrentView(View.DASHBOARD)} />;
+        case View.DASHBOARD:
         default:
-            return (
-                <div className="max-w-5xl mx-auto">
-                    <h1 className="text-2xl font-bold">Willkommen, {activeElf.name}!</h1>
-                    <p>Werkbank-Ansicht.</p>
-                </div>
-            );
+            return <Dashboard state={state} activeElf={activeElf} weather={weather} />;
     }
 };
 

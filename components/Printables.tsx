@@ -3,6 +3,7 @@ import { ElfConfig } from '../types';
 
 interface Props {
     elfConfig: ElfConfig;
+    kids: Kid[]; // Added kids prop
 }
 
 type PrintableCategory = 'official' | 'fun' | 'craft';
@@ -16,7 +17,7 @@ interface PrintableItem {
     colorClass: string;
 }
 
-const Printables: React.FC<Props> = ({ elfConfig }) => {
+const Printables: React.FC<Props> = ({ elfConfig, kids }) => { // Added kids prop
     const [warningReason, setWarningReason] = useState('Zimmer aufräumen!');
     const [filter, setFilter] = useState<'all' | PrintableCategory>('all');
 
@@ -65,7 +66,7 @@ const Printables: React.FC<Props> = ({ elfConfig }) => {
                         <h1>Offizielle Urkunde</h1>
                         <h2>vom Nordpol Management</h2>
                         <div class="text">Hiermit wird bestätigt, dass</div>
-                        <div class="name">${elfConfig.kids.map(k => k.name).join(' & ')}</div>
+                        <div class="name">${kids.map(k => k.name).join(' & ')}</div>
                         <div class="text">offiziell auf der Liste der braven Kinder stehen! Der Wichtel <b>${elfConfig.name}</b> hat die Fröhlichkeit und Hilfsbereitschaft bestätigt.</div>
                         <div class="seal">♛</div>
                         <div class="sig">Gezeichnet: Santa Claus</div>

@@ -6,6 +6,7 @@ interface Props {
   elfConfig: ElfConfig;
   onAddIdea: (idea: Idea) => void;
   existingIdeas: Idea[];
+  kids: Kid[]; // Added kids prop
 }
 
 interface ChatMessage {
@@ -15,7 +16,7 @@ interface ChatMessage {
   ideas?: Idea[];
 }
 
-const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas }) => {
+const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, kids }) => { // Added kids prop
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -58,7 +59,7 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas })
     const history = messages.map(m => ({ role: m.role, text: m.text }));
     const excludeTitles = existingIdeas.map(i => i.title);
 
-    const response = await chatWithIdeaAssistant(textToSend, history, elfConfig, excludeTitles);
+    const response = await chatWithIdeaAssistant(textToSend, history, elfConfig, kids, excludeTitles); // Pass kids
 
     const aiMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),

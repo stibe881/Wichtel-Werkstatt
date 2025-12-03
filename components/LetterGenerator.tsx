@@ -4,9 +4,10 @@ import { generateElfLetter } from '../services/geminiService';
 
 interface Props {
   elfConfig: ElfConfig;
+  kids: Kid[]; // Added kids prop
 }
 
-const LetterGenerator: React.FC<Props> = ({ elfConfig }) => {
+const LetterGenerator: React.FC<Props> = ({ elfConfig, kids }) => { // Added kids prop
   const [topic, setTopic] = useState('');
   const [tone, setTone] = useState('magisch');
   const [voice, setVoice] = useState('fröhlich');
@@ -16,7 +17,7 @@ const LetterGenerator: React.FC<Props> = ({ elfConfig }) => {
   const handleGenerate = async () => {
     if (!topic) return;
     setLoading(true);
-    const result = await generateElfLetter(elfConfig, topic, tone, voice);
+    const result = await generateElfLetter(elfConfig, kids, topic, tone, voice); // Pass kids
     setLetter(result);
     setLoading(false);
   };

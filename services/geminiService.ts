@@ -38,18 +38,21 @@ const assistantResponseSchema: Schema = {
   required: ['reply', 'ideas']
 };
 
-const getKidsDescription = (elf: ElfConfig) => {
-  if (!elf.kids || elf.kids.length === 0) return "Kinder";
-  return elf.kids.map(k => `${k.name} (${k.age} Jahre)`).join(' und ');
+const getKidsDescription = (elf: ElfConfig, allKids: Kid[]) => {
+  if (!elf.kidIds || elf.kidIds.length === 0) return "Kinder";
+  const assignedKids = allKids.filter(k => elf.kidIds.includes(k.id));
+  if (assignedKids.length === 0) return "Kinder";
+  return assignedKids.map(k => `${k.name} (${k.age} Jahre)`).join(' und ');
 };
 
 export const generateElfIdeas = async (
   elf: ElfConfig, 
+  kids: Kid[], // Added kids
   count: number, 
   theme: string,
   exclude: string[]
 ): Promise<Idea[]> => {
-  const kidsDesc = getKidsDescription(elf);
+  const kidsDesc = getKidsDescription(elf, kids);
   const prompt = `
     Wir sind das Wichtel-Management. Generiere ${count} kreative Elf on the Shelf Ideen für die Eltern von: ${kidsDesc}.
     Der Wichtel vor Ort heißt ${elf.name} und ist ${elf.personality}.
@@ -91,9 +94,10 @@ export const chatWithIdeaAssistant = async (
   userMessage: string,
   history: { role: string; text: string }[],
   elf: ElfConfig,
+  kids: Kid[], // Added kids
   excludeTitles: string[]
 ): Promise<{ reply: string; ideas: Idea[] }> => {
-  const kidsDesc = getKidsDescription(elf);
+  const kidsDesc = getKidsDescription(elf, kids);
   
   // Construct a chat history string for context
   const historyText = history.slice(-4).map(h => `${h.role === 'user' ? 'Elternteil' : 'Wichtel-Management'}: ${h.text}`).join('\n');
@@ -149,11 +153,12 @@ export const chatWithIdeaAssistant = async (
 
 export const generateElfLetter = async (
   elf: ElfConfig,
+  kids: Kid[], // Added kids
   topic: string,
   tone: string,
   voice: string
 ): Promise<string> => {
-  const kidsDesc = getKidsDescription(elf);
+  const kidsDesc = getKidsDescription(elf, kids);
   const prompt = `
     Schreibe einen Brief aus der **Ich-Perspektive** des Wichtels ${elf.name} an die Kinder: ${kidsDesc}.
     
@@ -184,9 +189,10 @@ export const generateElfLetter = async (
 
 export const generateDailyMessage = async (
   elf: ElfConfig,
+  kids: Kid[], // Added kids
   idea: Idea
 ): Promise<string> => {
-  const kidsDesc = getKidsDescription(elf);
+  const kidsDesc = getKidsDescription(elf, kids);
   const prompt = `
     Erstelle eine kurze Nachricht aus der **Ich-Perspektive** des Wichtels ${elf.name} für ${kidsDesc}.
     Es geht um die heutige Aktion: "${idea.title}".
@@ -241,9 +247,10 @@ export const generateShoppingListEnhancement = async (
 };
 
 export const generateElfExcuse = async (
-  elf: ElfConfig
+  elf: ElfConfig,
+  kids: Kid[] // Added kids
 ): Promise<string> => {
-    const kidsDesc = getKidsDescription(elf);
+    const kidsDesc = getKidsDescription(elf, kids);
     const prompt = `
       Generiere eine kreative, lustige und magische Ausrede aus der **Ich-Perspektive** des Wichtels ${elf.name}, warum ICH mich heute Nacht NICHT bewegt habe.
       
@@ -274,9 +281,10 @@ export const generateElfExcuse = async (
 }
 
 export const generateLatePreparationSolution = async (
-  elf: ElfConfig
+  elf: ElfConfig,
+  kids: Kid[] // Added kids
 ): Promise<{ instruction: string, letter: string }> => {
-    const kidsDesc = getKidsDescription(elf);
+    const kidsDesc = getKidsDescription(elf, kids);
     const prompt = `
       SITUATION: Die Eltern haben vergessen, die Wichtel-Aktion für heute vorzubereiten. Es ist morgens, die Kinder wachen gleich auf.
       
