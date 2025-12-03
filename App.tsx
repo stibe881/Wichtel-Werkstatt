@@ -244,7 +244,7 @@ const Content: React.FC<{
         case View.PRINTABLES:
             return <Printables elfConfig={activeElf} kids={state.kids} />;
         case View.KIDS_ZONE:
-            return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setState(prev => ({...prev, currentView: View.DASHBOARD}))} />;
+            return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setCurrentView(View.DASHBOARD)} />;
         case View.DASHBOARD:
         default:
             return <Dashboard 
