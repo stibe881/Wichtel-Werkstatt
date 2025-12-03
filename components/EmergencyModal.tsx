@@ -7,14 +7,15 @@ interface EmergencyModalProps {
   title: string;
   message: string;
   isLoading?: boolean;
+  onRegenerate?: () => void;
 }
 
-const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose, title, message, isLoading }) => {
+const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose, title, message, isLoading, onRegenerate }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-gradient-to-br from-red-50 via-white to-green-50 rounded-3xl shadow-2xl max-w-lg w-full p-8 relative border-4 border-red-500 animate-pulse-border">
+      <div className="bg-gradient-to-br from-red-50 via-white to-green-50 rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col p-8 relative border-4 border-red-500 animate-pulse-border">
         {/* Snowflake decorations */}
         <div className="absolute -top-6 -left-6 text-6xl animate-spin-slow">❄️</div>
         <div className="absolute -top-6 -right-6 text-6xl animate-spin-slow-reverse">❄️</div>
@@ -22,13 +23,13 @@ const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose, title,
         {!isLoading && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors z-10"
           >
             <X className="w-6 h-6" />
           </button>
         )}
 
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-6 flex flex-col min-h-0">
           {/* Emergency icon */}
           <div className="text-8xl animate-bounce">
             {isLoading ? '⏳' : '🚨'}
@@ -39,21 +40,31 @@ const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose, title,
             {title}
           </h2>
 
-          {/* Message */}
-          <div className="bg-white/80 rounded-2xl p-6 border-2 border-red-300">
+          {/* Message - Scrollable */}
+          <div className="bg-white/80 rounded-2xl p-6 border-2 border-red-300 overflow-y-auto flex-shrink min-h-0">
             <p className="text-lg text-gray-800 whitespace-pre-line leading-relaxed">
               {message}
             </p>
           </div>
 
-          {/* Close button */}
+          {/* Buttons */}
           {!isLoading && (
-            <button
-              onClick={onClose}
-              className="w-full bg-gradient-to-r from-red-600 to-green-600 text-white py-4 px-6 rounded-full font-bold text-lg hover:from-red-700 hover:to-green-700 transform hover:scale-105 transition-all shadow-lg"
-            >
-              Verstanden! 🎄
-            </button>
+            <div className="flex flex-col gap-3">
+              {onRegenerate && (
+                <button
+                  onClick={onRegenerate}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-full font-bold text-base hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+                >
+                  🔄 Neu generieren
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="w-full bg-gradient-to-r from-red-600 to-green-600 text-white py-4 px-6 rounded-full font-bold text-lg hover:from-red-700 hover:to-green-700 transform hover:scale-105 transition-all shadow-lg"
+              >
+                Verstanden! 🎄
+              </button>
+            </div>
           )}
 
           {isLoading && (

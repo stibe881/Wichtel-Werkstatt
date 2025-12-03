@@ -64,7 +64,7 @@ const App: React.FC = () => {
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
-  const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false });
+  const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false, currentElf: null as ElfConfig | null, currentType: '' as 'excuse' | 'lateprep' | '' });
 
   // Initial data load
   useEffect(() => {
@@ -116,7 +116,9 @@ const App: React.FC = () => {
             isOpen: true,
             title: '🎅 Wichtel-Hotline',
             message: 'Moment, ich frage kurz beim Wichtel nach...',
-            isLoading: true
+            isLoading: true,
+            currentElf: elf,
+            currentType: 'excuse'
         });
 
         const excuse = await generateElfExcuse(elf, state.kids);
@@ -125,7 +127,9 @@ const App: React.FC = () => {
             isOpen: true,
             title: `🎄 Wichtel-Ausrede für ${elf.name}`,
             message: `"${excuse}"`,
-            isLoading: false
+            isLoading: false,
+            currentElf: elf,
+            currentType: 'excuse'
         });
     };
 
@@ -134,7 +138,9 @@ const App: React.FC = () => {
             isOpen: true,
             title: '⚡ Wichtel-Zentrale',
             message: 'Moment, die Zentrale schickt eine Blitz-Idee...',
-            isLoading: true
+            isLoading: true,
+            currentElf: elf,
+            currentType: 'lateprep'
         });
 
         const solution = await generateLatePreparationSolution(elf, state.kids);
@@ -143,8 +149,18 @@ const App: React.FC = () => {
             isOpen: true,
             title: `💡 Blitz-Idee für ${elf.name}`,
             message: `Anweisung:\n${solution.instruction}\n\nBrief an die Kinder:\n"${solution.letter}"`,
-            isLoading: false
+            isLoading: false,
+            currentElf: elf,
+            currentType: 'lateprep'
         });
+    };
+
+    const handleRegenerateEmergency = () => {
+        if (emergencyModal.currentElf && emergencyModal.currentType === 'excuse') {
+            handleGenerateExcuse(emergencyModal.currentElf);
+        } else if (emergencyModal.currentElf && emergencyModal.currentType === 'lateprep') {
+            handleGenerateLatePrep(emergencyModal.currentElf);
+        }
     };
 
   const handleAuth = (email: string) => {
@@ -230,6 +246,7 @@ const App: React.FC = () => {
         title={emergencyModal.title}
         message={emergencyModal.message}
         isLoading={emergencyModal.isLoading}
+        onRegenerate={emergencyModal.currentType ? handleRegenerateEmergency : undefined}
       />
     </div>
   );

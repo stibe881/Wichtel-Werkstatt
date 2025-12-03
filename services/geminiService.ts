@@ -18,9 +18,18 @@ const generateContent = async (prompt: string, schema?: any): Promise<any> => {
         }
 
         const data = await response.json();
-        const text = data.text || "";
+        let text = data.text || "";
 
         if (schema) {
+            // Remove markdown code blocks if present (```json ... ``` or ``` ... ```)
+            text = text.trim();
+            if (text.startsWith('```')) {
+                // Remove opening ```json or ```
+                text = text.replace(/^```(?:json)?\s*\n?/, '');
+                // Remove closing ```
+                text = text.replace(/\n?```\s*$/, '');
+                text = text.trim();
+            }
             return JSON.parse(text || '{}');
         }
         return text;
