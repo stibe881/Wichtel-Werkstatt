@@ -212,19 +212,19 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
                             >
                                 {/* Tape effect */}
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-8 h-4 bg-yellow-100/50 border-l border-r border-white/40 rotate-1 shadow-sm opacity-80"></div>
-                                
-                                {idea.isUserCreated && (
-                                    <div className="absolute top-2 right-2 flex gap-1">
+
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    {idea.isUserCreated && (
                                         <span className="material-icons-round text-xs bg-green-100 text-green-700 rounded-full p-0.5" title="Eigene Idee">person</span>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setConfirmingDelete(idea); }}
-                                            className="material-icons-round text-xs bg-red-100 text-red-700 rounded-full p-0.5 opacity-50 hover:opacity-100" 
-                                            title="Löschen"
-                                        >
-                                            delete
-                                        </button>
-                                    </div>
-                                )}
+                                    )}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setConfirmingDelete(idea); }}
+                                        className="material-icons-round text-xs bg-red-100 text-red-700 rounded-full p-0.5 opacity-50 hover:opacity-100"
+                                        title="Löschen"
+                                    >
+                                        delete
+                                    </button>
+                                </div>
                                 
                                 <div className="mb-2 pr-6">
                                     <h3 className="font-bold text-lg text-elf-dark font-serif leading-tight">{idea.title}</h3>
