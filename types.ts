@@ -9,7 +9,8 @@ export enum View {
     SHOPPING,
     RECIPES,
     PRINTABLES,
-    KIDS_ZONE
+    KIDS_ZONE,
+    USER_PROFILE
 }
 
 export interface Kid {
@@ -62,6 +63,20 @@ export interface ArchivedYear {
     timestamp: string;
 }
 
+export interface UserInvitation {
+    id: string;
+    email: string;
+    invitedAt: string;
+    status: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    password: string; // In real app: hashed
+    invitations: UserInvitation[];
+}
+
 export interface AppState {
     elves: ElfConfig[];
     kids: Kid[];
@@ -70,4 +85,5 @@ export interface AppState {
     shoppingList: string[];
     savedIdeas: Idea[];
     archives: ArchivedYear[];
+    userProfile?: UserProfile;
 }

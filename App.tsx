@@ -12,6 +12,7 @@ import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
 import EmergencyModal from './components/EmergencyModal';
+import UserProfileComponent from './components/UserProfile';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
 
@@ -66,6 +67,7 @@ const App: React.FC = () => {
   const [calendarSelectedDay, setCalendarSelectedDay] = useState<number | undefined>(undefined);
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
   const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false, currentElf: null as ElfConfig | null, currentType: '' as 'excuse' | 'lateprep' | '', currentSolution: null as { instruction: string, letter: string } | null, currentExcuse: null as string | null });
+  const [showElfProfile, setShowElfProfile] = useState(false);
 
   // Initial data load
   useEffect(() => {
@@ -272,7 +274,7 @@ const App: React.FC = () => {
                             <p className="text-sm font-bold text-amber-100">{activeElf.name}</p>
                             <p className="text-xs text-amber-200/60">Aktiver Wichtel</p>
                         </div>
-                        <div onClick={() => handleSetCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer">
+                        <div onClick={() => setShowElfProfile(true)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer hover:bg-[#6d4e36] transition-colors">
                             {activeElf.name.charAt(0) || '?'}
                         </div>
                     </div>
@@ -305,6 +307,128 @@ const App: React.FC = () => {
         onRegenerate={emergencyModal.currentType ? handleRegenerateEmergency : undefined}
         onAddToPlanner={(emergencyModal.currentType === 'lateprep' && emergencyModal.currentSolution) || (emergencyModal.currentType === 'excuse' && emergencyModal.currentExcuse) ? handleAddEmergencyToPlanner : undefined}
       />
+
+      {/* Elf Profile Modal */}
+      {showElfProfile && activeElf && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-[#fcfaf2] w-full max-w-2xl rounded-2xl shadow-2xl border-4 border-[#2d1b14] flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-6 border-b-2 border-[#e6dac0] flex justify-between items-center bg-gradient-to-r from-elf-red to-elf-green text-white">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl font-serif font-bold border-2 border-white/40">
+                  {activeElf.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-3xl font-serif">{activeElf.name}</h3>
+                  <p className="text-white/80 text-sm">Wichtel-Profil</p>
+                </div>
+              </div>
+              <button onClick={() => setShowElfProfile(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <span className="material-icons-round text-3xl">close</span>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto p-6 space-y-6 bg-[#fcfaf2]">
+              {/* Dates */}
+              <div className="bg-white p-5 rounded-lg shadow-sm border-2 border-[#e6dac0]">
+                <h4 className="font-bold text-lg mb-3 text-elf-dark flex items-center gap-2">
+                  <span className="material-icons-round text-elf-gold">calendar_today</span>
+                  Wichtel-Saison
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Einzug</p>
+                    <p className="text-slate-800 font-bold">
+                      {new Date(activeElf.arrivalDate).toLocaleDateString('de-DE')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Abreise</p>
+                    <p className="text-slate-800 font-bold">
+                      {new Date(activeElf.departureDate).toLocaleDateString('de-DE')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personality */}
+              {activeElf.personality && (
+                <div className="bg-white p-5 rounded-lg shadow-sm border-2 border-[#e6dac0]">
+                  <h4 className="font-bold text-lg mb-3 text-elf-dark flex items-center gap-2">
+                    <span className="material-icons-round text-elf-gold">psychology</span>
+                    Persönlichkeit
+                  </h4>
+
+                  {activeElf.personality.traits && activeElf.personality.traits.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-2">Charakterzüge</p>
+                      <div className="flex flex-wrap gap-2">
+                        {activeElf.personality.traits.map((trait, idx) => (
+                          <span key={idx} className="bg-elf-gold/20 text-elf-dark px-3 py-1 rounded-full text-sm font-bold border border-elf-gold/30">
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeElf.personality.favoriteActivity && (
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-1">Lieblingsbeschäftigung</p>
+                      <p className="text-slate-800">{activeElf.personality.favoriteActivity}</p>
+                    </div>
+                  )}
+
+                  {activeElf.personality.quirk && (
+                    <div>
+                      <p className="text-xs text-slate-500 font-bold uppercase mb-1">Besonderheit</p>
+                      <p className="text-slate-800">{activeElf.personality.quirk}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Assigned Kids */}
+              {activeElf.kidIds && activeElf.kidIds.length > 0 && (
+                <div className="bg-white p-5 rounded-lg shadow-sm border-2 border-[#e6dac0]">
+                  <h4 className="font-bold text-lg mb-3 text-elf-dark flex items-center gap-2">
+                    <span className="material-icons-round text-elf-gold">child_care</span>
+                    Zugeordnete Kinder
+                  </h4>
+                  <div className="space-y-2">
+                    {state.kids.filter(k => activeElf.kidIds.includes(k.id)).map(kid => (
+                      <div key={kid.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                        <span className="material-icons-round text-2xl text-elf-gold">
+                          {kid.gender === 'girl' ? 'face_3' : 'face_6'}
+                        </span>
+                        <div>
+                          <p className="font-bold text-slate-800">{kid.name}</p>
+                          <p className="text-xs text-slate-500">{kid.age} Jahre alt</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t-2 border-[#e6dac0] flex justify-end gap-3 bg-[#f9f5e6]">
+              <button
+                onClick={() => {
+                  setShowElfProfile(false);
+                  handleSetCurrentView(View.SETTINGS);
+                }}
+                className="bg-elf-gold text-elf-dark px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <span className="material-icons-round text-sm">edit</span>
+                Profil bearbeiten
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -370,6 +494,8 @@ const Content: React.FC<{
     switch (currentView) {
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
+        case View.USER_PROFILE:
+            return <UserProfileComponent state={state} setState={setState} />;
         case View.IDEAS:
             return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} calendar={state.calendar} onAddToToday={onAddToToday} />;
         case View.CALENDAR:
@@ -386,10 +512,10 @@ const Content: React.FC<{
             return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setCurrentView(View.DASHBOARD)} />;
         case View.DASHBOARD:
         default:
-            return <Dashboard 
-                state={state} 
-                activeElf={activeElf} 
-                weather={weather} 
+            return <Dashboard
+                state={state}
+                activeElf={activeElf}
+                weather={weather}
                 setCurrentView={setCurrentView}
                 handlePanicMovement={handlePanicMovement}
                 handlePanicPreparation={handlePanicPreparation}
@@ -413,6 +539,7 @@ const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View, select
             <div className="pt-4 mt-4 border-t border-white/10">
                 <NavButton view={View.KIDS_ZONE} icon="child_care" label="Kinder-Zone" current={currentView} onClick={setCurrentView} />
                 <NavButton view={View.SETTINGS} icon="settings" label="Wichtel-Profil" current={currentView} onClick={setCurrentView} />
+                <NavButton view={View.USER_PROFILE} icon="account_circle" label="Benutzerprofil" current={currentView} onClick={setCurrentView} />
             </div>
         </nav>
         <div className="p-4 border-t border-white/10">
