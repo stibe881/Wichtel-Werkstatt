@@ -85,7 +85,7 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
   const handleGenerateMessage = async (dayPlan: CalendarDay) => {
     if (!dayPlan.idea) return;
     setGeneratingMessage(true);
-    const msg = await generateDailyMessage(elfConfig, dayPlan.idea);
+    const msg = await generateDailyMessage(elfConfig, kids, dayPlan.idea);
     onUpdateDay(dayPlan.day, { secretMessage: msg });
     setGeneratingMessage(false);
   };

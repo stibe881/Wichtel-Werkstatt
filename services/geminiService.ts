@@ -154,3 +154,16 @@ export const generateLatePreparationSolution = async (
         };
     }
 }
+
+export const generateDailyMessage = async (
+    elf: ElfConfig,
+    kids: Kid[],
+    idea: Idea
+  ): Promise<string> => {
+    const topic = `Ich habe heute Folgendes vor oder erlebt: "${idea.title}".`;
+    const tone = 'geheimnisvoll und freundlich';
+    const voice = 'magisch';
+  
+    // Reusing the existing generateElfLetter function
+    return generateElfLetter(elf, kids, topic, tone, voice);
+  };
