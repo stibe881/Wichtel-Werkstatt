@@ -43,7 +43,7 @@ app.post('/state/:userId', async (req, res) => {
     }
 });
 
-// Proxy for Gemini API using direct REST API call
+// Proxy for OpenAI API
 app.post('/generate', async (req, res) => {
     const { prompt, schema } = req.body;
 
@@ -52,41 +52,44 @@ app.post('/generate', async (req, res) => {
     }
 
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
-            throw new Error("API key is not configured on the server.");
+            throw new Error("OpenAI API key is not configured on the server.");
         }
 
-        // Use direct REST API call to v1 endpoint (not v1beta)
-        const model = 'gemini-1.5-flash';
-        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+        const model = 'gpt-4o-mini';
+        const url = 'https://api.openai.com/v1/chat/completions';
 
-        console.log(`Calling Gemini API with model: ${model}`);
+        console.log(`Calling OpenAI API with model: ${model}`);
 
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }]
+                model: model,
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                temperature: 0.7
             })
         });
 
         if (!response.ok) {
             const errorData = await response.text();
-            throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
+            throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
         }
 
         const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = data.choices?.[0]?.message?.content;
 
         if (!text) {
-            throw new Error('No text returned from Gemini API');
+            throw new Error('No text returned from OpenAI API');
         }
 
         console.log('Content generated successfully');
