@@ -66,9 +66,12 @@ app.post('/generate', async (req, res) => {
         
         res.send({ text });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error generating content via proxy:', error);
-        res.status(500).send({ error: 'Failed to generate content.' });
+        res.status(500).send({ 
+            error: 'Failed to generate content.',
+            details: error.message 
+        });
     }
 });
 
