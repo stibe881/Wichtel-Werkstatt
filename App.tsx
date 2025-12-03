@@ -213,7 +213,16 @@ const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View) => voi
         </div>
         <nav className="flex-1 p-4 space-y-2">
             <NavButton view={View.DASHBOARD} icon="dashboard" label="Werkbank" current={currentView} onClick={setCurrentView} />
-            <NavButton view={View.SETTINGS} icon="settings" label="Wichtel-Profil" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.IDEAS} icon="menu_book" label="Ideen-Katalog" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.LETTERS} icon="history_edu" label="Schreibstube" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.SHOPPING} icon="inventory_2" label="Material-Lager" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.PRINTABLES} icon="print" label="Druckerei" current={currentView} onClick={setCurrentView} />
+            <NavButton view={View.RECIPES} icon="bakery_dining" label="Wichtel-Bäckerei" current={currentView} onClick={setCurrentView} />
+            <div className="pt-4 mt-4 border-t border-white/10">
+                <NavButton view={View.KIDS_ZONE} icon="child_care" label="Kinder-Zone" current={currentView} onClick={setCurrentView} />
+                <NavButton view={View.SETTINGS} icon="settings" label="Wichtel-Profil" current={currentView} onClick={setCurrentView} />
+            </div>
         </nav>
         <div className="p-4 border-t border-white/10">
             <button onClick={handleLogout} className="w-full flex items-center gap-2 p-2 rounded hover:bg-white/10 text-red-400">
@@ -227,6 +236,9 @@ const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View) => voi
 const MobileNav: React.FC<{ currentView: View, setCurrentView: (v: View) => void }> = ({ currentView, setCurrentView }) => (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2d1b14] border-t-2 border-[#5d4037] flex justify-around p-2">
         <MobileNavButton view={View.DASHBOARD} icon="dashboard" label="Start" current={currentView} onClick={setCurrentView} />
+        <MobileNavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
+        <MobileNavButton view={View.IDEAS} icon="menu_book" label="Ideen" current={currentView} onClick={setCurrentView} />
+        <MobileNavButton view={View.SHOPPING} icon="inventory_2" label="Lager" current={currentView} onClick={setCurrentView} />
         <MobileNavButton view={View.SETTINGS} icon="settings" label="Profil" current={currentView} onClick={setCurrentView} />
     </div>
 );
