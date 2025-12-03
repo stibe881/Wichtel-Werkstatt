@@ -271,6 +271,28 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
             Ihre Wichtel
         </h2>
         <p className="text-sm text-slate-500 mb-4">Erstellen Sie Ihre Wichtel-Charaktere und weisen Sie ihnen Kinder zu. Jeder Wichtel hat seinen eigenen Namen und seine eigene Persönlichkeit.</p>
+
+        {/* Empty State - No Elves Yet */}
+        {state.elves.length === 0 && (
+          <div className="my-12 text-center">
+            <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-elf-red to-elf-green rounded-full flex items-center justify-center border-4 border-[#855E42] shadow-xl">
+              <span className="material-icons-round text-white" style={{ fontSize: '80px' }}>auto_awesome</span>
+            </div>
+            <h3 className="text-2xl font-bold text-elf-dark mb-3 font-serif">Willkommen in der Wichtel-Werkstatt!</h3>
+            <p className="text-slate-600 mb-6 max-w-md mx-auto">
+              Erstellen Sie Ihren ersten Wichtel, um mit der magischen Wichtel-Planung zu beginnen.
+              Der Wizard führt Sie durch alle Schritte!
+            </p>
+            <button
+              onClick={() => setShowWizard(true)}
+              className="px-8 py-4 bg-gradient-to-r from-elf-red to-elf-green text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all flex items-center gap-3 mx-auto"
+            >
+              <span className="material-icons-round text-2xl">auto_awesome</span>
+              Ersten Wichtel erstellen
+            </button>
+          </div>
+        )}
+
         <div className="space-y-6">
           {state.elves.map(elf => (
             <div key={elf.id} className="p-6 border-2 border-[#e6dac0] rounded-xl bg-gradient-to-br from-[#fcfaf2] to-white shadow-md">
