@@ -227,12 +227,15 @@ const Content: React.FC<{
     const onAddIdea = (idea: Idea) => {
         setState(prev => ({ ...prev, savedIdeas: [...prev.savedIdeas, idea] }));
     };
+    const onDeleteIdea = (ideaId: string) => {
+        setState(prev => ({ ...prev, savedIdeas: prev.savedIdeas.filter(i => i.id !== ideaId) }));
+    };
 
     switch (currentView) {
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
         case View.IDEAS:
-            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} existingIdeas={state.savedIdeas} kids={state.kids} />;
+            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} />;
         case View.CALENDAR:
             return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} />;
         case View.LETTERS:

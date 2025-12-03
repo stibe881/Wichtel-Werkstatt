@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Idea, ElfConfig, Kid } from '../types';
 import { chatWithIdeaAssistant } from '../services/geminiService';
-import IdeaWizard from './IdeaWizard'; // Import IdeaWizard
-import IdeaDetail from './IdeaDetail'; // Import IdeaDetail
+import IdeaWizard from './IdeaWizard';
+import IdeaDetail from './IdeaDetail';
+import ConfirmModal from './ConfirmModal';
 
 interface Props {
   elfConfig: ElfConfig;
   onAddIdea: (idea: Idea) => void;
+  onDeleteIdea: (ideaId: string) => void;
   existingIdeas: Idea[];
   kids: Kid[];
 }
@@ -18,7 +20,7 @@ interface ChatMessage {
   ideas?: Idea[];
 }
 
-const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, kids }) => {
+const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, existingIdeas, kids }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -33,6 +35,7 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
   const [searchTerm, setSearchTerm] = useState('');
   const [showIdeaWizard, setShowIdeaWizard] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<Idea | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +84,13 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
     }
   };
 
+  const handleDeleteConfirm = () => {
+    if (confirmingDelete) {
+        onDeleteIdea(confirmingDelete.id);
+        setConfirmingDelete(null);
+    }
+  };
+
   const QUICK_PROMPTS = [
     "Einzug",
     "Abschied",
@@ -108,6 +118,15 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
             onAdd={(idea) => { onAddIdea(idea); setSelectedIdea(null); }}
             isSaved={existingIdeas.some(i => i.id === selectedIdea.id)}
         />
+      )}
+
+      {confirmingDelete && (
+          <ConfirmModal
+              title="Idee löschen?"
+              message={`Möchtest du die Idee "${confirmingDelete.title}" wirklich löschen?`}
+              onConfirm={handleDeleteConfirm}
+              onCancel={() => setConfirmingDelete(null)}
+          />
       )}
 
       {/* Wooden Header Frame */}
@@ -193,6 +212,19 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
                             >
                                 {/* Tape effect */}
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-8 h-4 bg-yellow-100/50 border-l border-r border-white/40 rotate-1 shadow-sm opacity-80"></div>
+                                
+                                {idea.isUserCreated && (
+                                    <div className="absolute top-2 right-2 flex gap-1">
+                                        <span className="material-icons-round text-xs bg-green-100 text-green-700 rounded-full p-0.5" title="Eigene Idee">person</span>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setConfirmingDelete(idea); }}
+                                            className="material-icons-round text-xs bg-red-100 text-red-700 rounded-full p-0.5 opacity-50 hover:opacity-100" 
+                                            title="Löschen"
+                                        >
+                                            delete
+                                        </button>
+                                    </div>
+                                )}
                                 
                                 <div className="mb-2 pr-6">
                                     <h3 className="font-bold text-lg text-elf-dark font-serif leading-tight">{idea.title}</h3>

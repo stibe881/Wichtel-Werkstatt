@@ -36,6 +36,7 @@ export interface Idea {
     effort: 'niedrig' | 'mittel' | 'hoch';
     messiness: 'sauber' | 'etwas chaos' | 'chaos pur';
     type: 'normal' | 'arrival' | 'departure';
+    isUserCreated?: boolean;
 }
 
 export interface CalendarDay {

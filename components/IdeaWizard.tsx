@@ -27,7 +27,8 @@ const IdeaWizard: React.FC<Props> = ({ onComplete, onCancel }) => {
             materials: materials.split(',').map(m => m.trim()).filter(m => m.length > 0),
             effort,
             messiness,
-            type
+            type,
+            isUserCreated: true
         };
         onComplete(newIdea);
     };
