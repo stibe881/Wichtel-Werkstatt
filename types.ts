@@ -19,10 +19,16 @@ export interface Kid {
     gender: 'boy' | 'girl';
 }
 
+export interface ElfPersonality {
+    traits: string[];
+    favoriteActivity: string;
+    quirk: string;
+}
+
 export interface ElfConfig {
     id: string;
     name: string;
-    personality: string;
+    personality?: ElfPersonality;
     kidIds: string[]; // IDs of assigned kids
     arrivalDate: string;
     departureDate: string;

@@ -593,6 +593,68 @@ const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfi
               ))}
         </div>
       </div>
+
+      {/* Idea Picker Modal */}
+      {showIdeaPicker && selectedDay && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-[#fcfaf2] w-full max-w-2xl rounded-xl shadow-2xl border-4 border-[#2d1b14] flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b-2 border-[#e6dac0] flex justify-between items-center bg-[#f9f5e6]">
+              <h3 className="font-bold text-xl text-elf-dark font-serif">Akte für Tag {selectedDay} auswählen</h3>
+              <button onClick={() => setShowIdeaPicker(false)} className="p-2 hover:bg-[#e6dac0] rounded-full">
+                <span className="material-icons-round">close</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2 p-4 border-b border-[#e6dac0]">
+              {['all', 'arrival', 'departure', 'normal'].map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setIdeaFilter(filter as any)}
+                  className={`px-4 py-2 rounded-full font-bold text-xs uppercase transition-all ${
+                    ideaFilter === filter
+                      ? 'bg-elf-gold text-elf-dark'
+                      : 'bg-[#e6dac0] text-[#855E42] hover:bg-[#d4c5a5]'
+                  }`}
+                >
+                  {filter === 'all' ? 'Alle' : filter === 'arrival' ? 'Einzug' : filter === 'departure' ? 'Abschied' : 'Normal'}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#e6dac0]">
+              {filteredIdeas.length === 0 ? (
+                <div className="text-center py-12 text-[#855E42]">
+                  <p className="font-bold mb-2">Keine passenden Ideen gefunden</p>
+                  <p className="text-sm">Erstelle neue Ideen im Ideen-Katalog</p>
+                </div>
+              ) : (
+                filteredIdeas.map(idea => (
+                  <div
+                    key={idea.id}
+                    onClick={() => handleSelectIdea(idea)}
+                    className="p-4 bg-white border-2 border-[#e6dac0] rounded-xl shadow-sm cursor-pointer hover:border-elf-gold hover:shadow-md transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-bold text-lg text-elf-dark font-serif">{idea.title}</h4>
+                      {idea.type === 'arrival' && <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">EINZUG</span>}
+                      {idea.type === 'departure' && <span className="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">ABSCHIED</span>}
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">{idea.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-icons-round text-sm">schedule</span>
+                        {idea.effort}
+                      </span>
+                      <span>{idea.messiness}</span>
+                      <span>{idea.materials?.length || 0} Material(ien)</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -224,41 +224,152 @@ const RecipeCard: React.FC<{ recipe: Recipe, index: number, onOpenModal: (r: Rec
     </div>
 );
 
-const RecipeModal: React.FC<{ recipe: Recipe, onClose: () => void }> = ({ recipe, onClose }) => (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="bg-[#fcfaf2] w-full max-w-lg rounded shadow-2xl animate-slide-up border-4 border-[#2d1b14] flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b-2 border-[#e6dac0] flex justify-between items-center bg-[#f9f5e6]">
-                <h3 className="font-bold text-xl text-elf-dark font-serif">{recipe.title}</h3>
-                <button onClick={onClose} className="p-2 hover:bg-[#e6dac0] rounded-full">
-                    <span className="material-icons-round">close</span>
-                </button>
-            </div>
-            
-            <div className="overflow-y-auto p-6 space-y-6 bg-parchment">
-                <p className="text-slate-700 italic">{recipe.desc}</p>
-                
-                <div>
-                    <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zutaten</h4>
-                    <ul className="list-disc list-inside text-slate-700 space-y-1">
-                        {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zubereitung</h4>
-                    <ol className="list-decimal list-inside text-slate-700 space-y-1.5">
-                        {recipe.steps.map((step, idx) => <li key={idx}>{step}</li>)}
-                    </ol>
-                </div>
-            </div>
+const RecipeModal: React.FC<{ recipe: Recipe, onClose: () => void }> = ({ recipe, onClose }) => {
+    const handlePrintRecipe = () => {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${recipe.title}</title>
+                        <style>
+                            @page {
+                                size: A6 landscape;
+                                margin: 10mm;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background-color: white;
+                                font-family: 'Georgia', serif;
+                                font-size: 8pt;
+                                line-height: 1.3;
+                            }
+                            .recipe-card {
+                                width: 148mm;
+                                height: 105mm;
+                                padding: 8mm;
+                                box-sizing: border-box;
+                                border: 2px solid #2d1b14;
+                                background: linear-gradient(to bottom, #fcfaf2 0%, #f9f5e6 100%);
+                            }
+                            .header {
+                                text-align: center;
+                                margin-bottom: 6mm;
+                                border-bottom: 2px solid #855E42;
+                                padding-bottom: 3mm;
+                            }
+                            .header h1 {
+                                font-size: 14pt;
+                                margin: 0 0 2mm 0;
+                                color: #2d1b14;
+                                font-weight: bold;
+                            }
+                            .desc {
+                                font-size: 7pt;
+                                color: #5d4037;
+                                font-style: italic;
+                            }
+                            .section {
+                                margin-bottom: 4mm;
+                            }
+                            .section-title {
+                                font-weight: bold;
+                                font-size: 9pt;
+                                color: #855E42;
+                                text-transform: uppercase;
+                                margin-bottom: 2mm;
+                                border-bottom: 1px solid #d4c5a5;
+                            }
+                            ul, ol {
+                                margin: 0;
+                                padding-left: 12pt;
+                            }
+                            li {
+                                margin-bottom: 1mm;
+                                font-size: 8pt;
+                            }
+                            .footer {
+                                text-align: center;
+                                font-size: 6pt;
+                                color: #a0a0a0;
+                                margin-top: 4mm;
+                                border-top: 1px dashed #d4c5a5;
+                                padding-top: 2mm;
+                            }
+                            @media print {
+                                body { background: none; }
+                                .recipe-card { border: 1px solid #2d1b14; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="recipe-card">
+                            <div class="header">
+                                <h1>${recipe.title}</h1>
+                                <div class="desc">${recipe.desc}</div>
+                            </div>
 
-            <div className="p-4 border-t-2 border-[#e6dac0] flex justify-end bg-[#f9f5e6]">
-                <button onClick={() => window.print()} className="bg-elf-gold text-elf-dark px-4 py-2 rounded font-bold shadow-md">
-                    <span className="material-icons-round text-sm">print</span> Rezept drucken
-                </button>
+                            <div class="section">
+                                <div class="section-title">Zutaten</div>
+                                <ul>
+                                    ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="section">
+                                <div class="section-title">Zubereitung</div>
+                                <ol>
+                                    ${recipe.steps.map(step => `<li>${step}</li>`).join('')}
+                                </ol>
+                            </div>
+
+                            <div class="footer">Wichtel-Werkstatt • Geheime Nordpol-Rezepte</div>
+                        </div>
+                        <script>window.onload = function() { window.print(); }</script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-[#fcfaf2] w-full max-w-lg rounded shadow-2xl animate-slide-up border-4 border-[#2d1b14] flex flex-col max-h-[90vh]">
+                <div className="p-4 border-b-2 border-[#e6dac0] flex justify-between items-center bg-[#f9f5e6]">
+                    <h3 className="font-bold text-xl text-elf-dark font-serif">{recipe.title}</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-[#e6dac0] rounded-full">
+                        <span className="material-icons-round">close</span>
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto p-6 space-y-6 bg-parchment">
+                    <p className="text-slate-700 italic">{recipe.desc}</p>
+
+                    <div>
+                        <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zutaten</h4>
+                        <ul className="list-disc list-inside text-slate-700 space-y-1">
+                            {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zubereitung</h4>
+                        <ol className="list-decimal list-inside text-slate-700 space-y-1.5">
+                            {recipe.steps.map((step, idx) => <li key={idx}>{step}</li>)}
+                        </ol>
+                    </div>
+                </div>
+
+                <div className="p-4 border-t-2 border-[#e6dac0] flex justify-end bg-[#f9f5e6]">
+                    <button onClick={handlePrintRecipe} className="bg-elf-gold text-elf-dark px-4 py-2 rounded font-bold shadow-md flex items-center gap-2">
+                        <span className="material-icons-round text-sm">print</span> Rezept drucken
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default Recipes;
