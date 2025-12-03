@@ -63,6 +63,8 @@ const printHtml = (title: string, htmlContent: string) => {
 
 const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
     const [warningReason, setWarningReason] = useState('Zimmer aufräumen!');
+    const [warningKidName, setWarningKidName] = useState('');
+    const [certKidName, setCertKidName] = useState('');
     const [filter, setFilter] = useState<'all' | PrintableCategory>('all');
 
     const assignedKids = kids.filter(k => elfConfig.kidIds.includes(k.id));
@@ -94,7 +96,7 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
                     </div>
                     <div class="content">
                         Hiermit wird feierlich bestätigt, dass
-                        <div class="recipient">${kidsNames || 'die Kinder'}</div>
+                        <div class="recipient">${certKidName || kidsNames || 'die Kinder'}</div>
                         im vergangenen Zeitraum außergewöhnlich brav war(en).
                         <br/><br/>
                         Weiter so!
@@ -110,6 +112,7 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
                     .header h1 { font-size: 48pt; margin: 0; color: #b91c1c; }
                     .content { text-align: center; font-size: 18pt; }
                     .reason { font-weight: bold; text-decoration: underline; margin: 20px; }
+                    .recipient { font-size: 24pt; font-weight: bold; color: #2d1b14; margin: 15px 0; }
                 </style>
                 <div class="page">
                     <div class="header">
@@ -117,9 +120,10 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
                         <h2>Offizielle Verwarnung vom Nordpol</h2>
                     </div>
                     <div class="content">
+                        ${warningKidName ? `<div class="recipient">${warningKidName}</div>` : ''}
                         Mir ist zu Ohren gekommen, dass es Probleme gibt beim Thema:
                         <div class="reason">${warningReason}</div>
-                        Bitte verbessert euch, sonst muss ich dem Weihnachtsmann davon berichten!
+                        Bitte ${warningKidName ? 'verbessere' : 'verbessert euch'} dich${warningKidName ? '' : '/euch'}, sonst muss ich dem Weihnachtsmann davon berichten!
                         <br/><br/>
                         <div class="signature">${elfConfig.name}</div>
                         (In Sorge)
@@ -190,15 +194,34 @@ const Printables: React.FC<Props> = ({ elfConfig, kids }) => {
                             <span className="material-icons-round text-6xl mb-4 opacity-80">{item.icon}</span>
                             <h3 className="font-bold text-xl mb-2">{item.title}</h3>
                             <p className="text-sm opacity-70 mb-6 flex-grow">{item.description}</p>
-                            
+
                             {item.id === 'warn' && (
-                                <div className="w-full mb-4">
-                                    <input 
-                                        type="text" 
+                                <div className="w-full mb-4 space-y-2">
+                                    <input
+                                        type="text"
+                                        value={warningKidName}
+                                        onChange={(e) => setWarningKidName(e.target.value)}
+                                        className="w-full p-2 text-sm border border-black/20 rounded bg-white/50"
+                                        placeholder="Name des Kindes (optional)"
+                                    />
+                                    <input
+                                        type="text"
                                         value={warningReason}
                                         onChange={(e) => setWarningReason(e.target.value)}
                                         className="w-full p-2 text-sm border border-black/20 rounded bg-white/50"
                                         placeholder="Grund für die Warnung..."
+                                    />
+                                </div>
+                            )}
+
+                            {item.id === 'cert' && (
+                                <div className="w-full mb-4">
+                                    <input
+                                        type="text"
+                                        value={certKidName}
+                                        onChange={(e) => setCertKidName(e.target.value)}
+                                        className="w-full p-2 text-sm border border-black/20 rounded bg-white/50"
+                                        placeholder="Name des Kindes (optional)"
                                     />
                                 </div>
                             )}

@@ -11,6 +11,7 @@ import KidsZone from './components/KidsZone';
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
+import EmergencyModal from './components/EmergencyModal';
 import { generateElfExcuse, generateLatePreparationSolution } from './services/geminiService';
 import { getWeather } from './services/weatherService';
 
@@ -63,6 +64,7 @@ const App: React.FC = () => {
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
+  const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false });
 
   // Initial data load
   useEffect(() => {
@@ -110,15 +112,39 @@ const App: React.FC = () => {
   }, [state, isAuthenticated, userId, hasLoadedFromBackend]);
 
     const handleGenerateExcuse = async (elf: ElfConfig) => {
-        alert('Moment, ich frage kurz beim Wichtel nach...');
+        setEmergencyModal({
+            isOpen: true,
+            title: '🎅 Wichtel-Hotline',
+            message: 'Moment, ich frage kurz beim Wichtel nach...',
+            isLoading: true
+        });
+
         const excuse = await generateElfExcuse(elf, state.kids);
-        alert(`Wichtel-Ausrede für ${elf.name}:\n\n"${excuse}"`);
+
+        setEmergencyModal({
+            isOpen: true,
+            title: `🎄 Wichtel-Ausrede für ${elf.name}`,
+            message: `"${excuse}"`,
+            isLoading: false
+        });
     };
 
     const handleGenerateLatePrep = async (elf: ElfConfig) => {
-        alert('Moment, die Zentrale schickt eine Blitz-Idee...');
+        setEmergencyModal({
+            isOpen: true,
+            title: '⚡ Wichtel-Zentrale',
+            message: 'Moment, die Zentrale schickt eine Blitz-Idee...',
+            isLoading: true
+        });
+
         const solution = await generateLatePreparationSolution(elf, state.kids);
-        alert(`Blitz-Idee für ${elf.name}:\n\nAnweisung: ${solution.instruction}\n\nBrief an die Kinder: "${solution.letter}"`);
+
+        setEmergencyModal({
+            isOpen: true,
+            title: `💡 Blitz-Idee für ${elf.name}`,
+            message: `Anweisung:\n${solution.instruction}\n\nBrief an die Kinder:\n"${solution.letter}"`,
+            isLoading: false
+        });
     };
 
   const handleAuth = (email: string) => {
@@ -149,6 +175,13 @@ const App: React.FC = () => {
       <>
         <LandingPage onLogin={() => { setAuthMode('login'); setShowAuthModal(true); }} onRegister={() => { setAuthMode('register'); setShowAuthModal(true); }} />
         {showAuthModal && <AuthModal mode={authMode} onClose={() => setShowAuthModal(false)} onSubmit={handleAuth} />}
+        <EmergencyModal
+          isOpen={emergencyModal.isOpen}
+          onClose={() => setEmergencyModal({ ...emergencyModal, isOpen: false })}
+          title={emergencyModal.title}
+          message={emergencyModal.message}
+          isLoading={emergencyModal.isLoading}
+        />
       </>
     );
   }
@@ -191,6 +224,13 @@ const App: React.FC = () => {
         </div>
         {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={setCurrentView} />}
       </main>
+      <EmergencyModal
+        isOpen={emergencyModal.isOpen}
+        onClose={() => setEmergencyModal({ ...emergencyModal, isOpen: false })}
+        title={emergencyModal.title}
+        message={emergencyModal.message}
+        isLoading={emergencyModal.isLoading}
+      />
     </div>
   );
 };

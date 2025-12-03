@@ -102,10 +102,10 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
     "Frech"
   ];
 
-  const filteredSavedIdeas = existingIdeas.filter(idea => 
+  const filteredSavedIdeas = existingIdeas.filter(idea =>
     idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     idea.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    idea.materials.some(m => m.toLowerCase().includes(searchTerm.toLowerCase()))
+    (idea.materials || []).some(m => m.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -239,10 +239,10 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
 
                                 <div className="mt-auto pt-3 border-t border-dashed border-slate-200">
                                     <div className="flex flex-wrap gap-1 mb-2">
-                                        {idea.materials.slice(0, 3).map((m, i) => (
+                                        {(idea.materials || []).slice(0, 3).map((m, i) => (
                                             <span key={i} className="text-[10px] bg-[#f9f5e6] px-2 py-1 rounded-full text-[#855E42] border border-[#e6dac0]">{m}</span>
                                         ))}
-                                        {idea.materials.length > 3 && <span className="text-[10px] text-slate-400 self-center">+{idea.materials.length - 3}</span>}
+                                        {(idea.materials || []).length > 3 && <span className="text-[10px] text-slate-400 self-center">+{(idea.materials || []).length - 3}</span>}
                                     </div>
                                     <div className="flex justify-between items-center text-xs font-bold uppercase text-slate-400">
                                         <span className={`flex items-center gap-1 ${
