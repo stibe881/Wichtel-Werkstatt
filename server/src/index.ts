@@ -59,35 +59,16 @@ app.post('/generate', async (req, res) => {
         }
         const genAI = new GoogleGenerativeAI(apiKey);
 
-        // Try different model names in order
-        const modelNamesToTry = [
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-pro",
-            "gemini-pro"
-        ];
+        // Use gemini-1.5-flash with the updated SDK
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        let lastError: any = null;
+        console.log('Attempting to generate content with gemini-1.5-flash');
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-        for (const modelName of modelNamesToTry) {
-            try {
-                console.log(`Trying model: ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
-                console.log(`Success with model: ${modelName}`);
-                return res.send({ text });
-            } catch (error: any) {
-                console.log(`Model ${modelName} failed:`, error.message);
-                lastError = error;
-                // Continue to next model
-            }
-        }
-
-        // If all models failed, throw the last error
-        throw lastError || new Error('All model attempts failed');
+        console.log('Content generated successfully');
+        res.send({ text });
 
     } catch (error: any) {
         console.error('Error generating content via proxy:', error);
