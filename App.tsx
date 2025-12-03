@@ -183,23 +183,42 @@ const Content: React.FC<{ currentView: View, state: AppState, setState: React.Di
     if (!activeElf) {
         return <ElfSettings state={state} setState={setState} />;
     }
+    const onUpdateDay = (day: number, updates: Partial<CalendarDay>) => {
+        setState(prev => {
+          const newCalendar = prev.calendar.map(d => d.day === day ? { ...d, ...updates } : d);
+          let newShoppingList = prev.shoppingList;
+          if (updates.idea) {
+              const materials = updates.idea.materials || [];
+              const uniqueMaterials = materials.filter((m: string) => !prev.shoppingList.includes(m));
+              newShoppingList = [...prev.shoppingList, ...uniqueMaterials];
+          }
+          return { ...prev, calendar: newCalendar, shoppingList: newShoppingList };
+        });
+    };
+    const onUpdateItems = (items: string[]) => {
+        setState(prev => ({ ...prev, shoppingList: items }));
+    };
+    const onAddIdea = (idea: Idea) => {
+        setState(prev => ({ ...prev, savedIdeas: [...prev.savedIdeas, idea] }));
+    };
+
     switch (currentView) {
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
         case View.IDEAS:
-            return <IdeaGenerator elfConfig={activeElf} onAddIdea={(idea) => setState(prev => ({...prev, savedIdeas: [...prev.savedIdeas, idea]}))} existingIdeas={state.savedIdeas} />;
+            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} existingIdeas={state.savedIdeas} kids={state.kids} />;
         case View.CALENDAR:
-            return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={(day, updates) => setState(prev => ({...prev, calendar: prev.calendar.map(d => d.day === day ? {...d, ...updates} : d)}))} elfConfig={activeElf} kids={state.kids} />;
+            return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} />;
         case View.LETTERS:
-            return <LetterGenerator elfConfig={activeElf} />;
+            return <LetterGenerator elfConfig={activeElf} kids={state.kids} />;
         case View.SHOPPING:
-            return <ShoppingList items={state.shoppingList} onUpdateItems={(items) => setState(prev => ({...prev, shoppingList: items}))} />;
+            return <ShoppingList items={state.shoppingList} onUpdateItems={onUpdateItems} />;
         case View.RECIPES:
             return <Recipes />;
         case View.PRINTABLES:
-            return <Printables elfConfig={activeElf} />;
+            return <Printables elfConfig={activeElf} kids={state.kids} />;
         case View.KIDS_ZONE:
-            return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setCurrentView(View.DASHBOARD)} />;
+            return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setState(prev => ({...prev, currentView: View.DASHBOARD}))} />;
         case View.DASHBOARD:
         default:
             return <Dashboard state={state} activeElf={activeElf} weather={weather} />;
