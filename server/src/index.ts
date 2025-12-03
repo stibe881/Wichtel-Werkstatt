@@ -58,7 +58,7 @@ app.post('/generate', async (req, res) => {
             throw new Error("API key is not configured on the server.");
         }
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+        const model = genAI.getGenerativeModel({ model: "gemini-pro"}); // Changed model
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -66,12 +66,9 @@ app.post('/generate', async (req, res) => {
         
         res.send({ text });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error generating content via proxy:', error);
-        res.status(500).send({ 
-            error: 'Failed to generate content.',
-            details: error.message 
-        });
+        res.status(500).send({ error: 'Failed to generate content.' });
     }
 });
 
