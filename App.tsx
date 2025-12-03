@@ -63,6 +63,7 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>(getInitialState);
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
+  const [calendarSelectedDay, setCalendarSelectedDay] = useState<number | undefined>(undefined);
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
   const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false, currentElf: null as ElfConfig | null, currentType: '' as 'excuse' | 'lateprep' | '', currentSolution: null as { instruction: string, letter: string } | null, currentExcuse: null as string | null });
 
@@ -223,6 +224,15 @@ const App: React.FC = () => {
     setState(DEFAULT_STATE);
   };
 
+  const handleSetCurrentView = (view: View, selectedDay?: number) => {
+    setCurrentView(view);
+    if (view === View.CALENDAR && selectedDay !== undefined) {
+      setCalendarSelectedDay(selectedDay);
+    } else {
+      setCalendarSelectedDay(undefined);
+    }
+  };
+
   const activeElf = state.elves.find(e => e.id === state.activeElfId);
 
   if (isLoading && !hasLoadedFromBackend) {
@@ -249,7 +259,7 @@ const App: React.FC = () => {
   // The ElfSettings component will handle the "no elf" case.
   return (
     <div className="flex h-screen bg-[#2d1b14] font-sans text-slate-900 overflow-hidden">
-      {currentView !== View.KIDS_ZONE && <NavSidebar currentView={currentView} setCurrentView={setCurrentView} handleLogout={handleLogout} />}
+      {currentView !== View.KIDS_ZONE && <NavSidebar currentView={currentView} setCurrentView={handleSetCurrentView} handleLogout={handleLogout} />}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         {currentView !== View.KIDS_ZONE && (
             <header className="bg-[#2d1b14] border-b border-[#5d4037] px-4 py-3 flex justify-between items-center shadow-lg z-10 flex-shrink-0">
@@ -262,7 +272,7 @@ const App: React.FC = () => {
                             <p className="text-sm font-bold text-amber-100">{activeElf.name}</p>
                             <p className="text-xs text-amber-200/60">Aktiver Wichtel</p>
                         </div>
-                        <div onClick={() => setCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer">
+                        <div onClick={() => handleSetCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer">
                             {activeElf.name.charAt(0) || '?'}
                         </div>
                     </div>
@@ -272,7 +282,7 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 bg-[#d4c5a5]">
             <Content
                 currentView={currentView}
-                setCurrentView={setCurrentView}
+                setCurrentView={handleSetCurrentView}
                 state={state}
                 setState={setState}
                 activeElf={activeElf}
@@ -281,9 +291,10 @@ const App: React.FC = () => {
                 handlePanicPreparation={handleGenerateLatePrep}
                 emergencyModal={emergencyModal}
                 setEmergencyModal={setEmergencyModal}
+                calendarSelectedDay={calendarSelectedDay}
             />
         </div>
-        {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={setCurrentView} />}
+        {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={handleSetCurrentView} />}
       </main>
       <EmergencyModal
         isOpen={emergencyModal.isOpen}
@@ -302,7 +313,7 @@ const App: React.FC = () => {
 
 const Content: React.FC<{
     currentView: View,
-    setCurrentView: (v: View) => void,
+    setCurrentView: (v: View, selectedDay?: number) => void,
     state: AppState,
     setState: React.Dispatch<React.SetStateAction<AppState>>,
     activeElf: ElfConfig | undefined,
@@ -311,8 +322,9 @@ const Content: React.FC<{
     handlePanicPreparation: (elf: ElfConfig) => void,
     emergencyModal: any,
     setEmergencyModal: (modal: any) => void,
+    calendarSelectedDay?: number,
 }> =
-({ currentView, setCurrentView, state, setState, activeElf, weather, handlePanicMovement, handlePanicPreparation, emergencyModal, setEmergencyModal }) => {
+({ currentView, setCurrentView, state, setState, activeElf, weather, handlePanicMovement, handlePanicPreparation, emergencyModal, setEmergencyModal, calendarSelectedDay }) => {
     if (!activeElf) {
         return <ElfSettings state={state} setState={setState} />;
     }
@@ -361,7 +373,7 @@ const Content: React.FC<{
         case View.IDEAS:
             return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} calendar={state.calendar} onAddToToday={onAddToToday} />;
         case View.CALENDAR:
-            return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} />;
+            return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} initialSelectedDay={calendarSelectedDay} />;
         case View.LETTERS:
             return <LetterGenerator elfConfig={activeElf} kids={state.kids} />;
         case View.SHOPPING:
@@ -385,7 +397,7 @@ const Content: React.FC<{
     }
 };
 
-const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View) => void, handleLogout: () => void }> = ({ currentView, setCurrentView, handleLogout }) => (
+const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View, selectedDay?: number) => void, handleLogout: () => void }> = ({ currentView, setCurrentView, handleLogout }) => (
     <aside className="hidden md:flex w-64 bg-[#2d1b14] text-amber-50 flex-col">
         <div className="p-6 text-center border-b border-white/10">
             <h1 className="text-2xl font-serif">Wichtel-Werkstatt</h1>
@@ -412,7 +424,7 @@ const NavSidebar: React.FC<{ currentView: View, setCurrentView: (v: View) => voi
     </aside>
 );
 
-const MobileNav: React.FC<{ currentView: View, setCurrentView: (v: View) => void }> = ({ currentView, setCurrentView }) => (
+const MobileNav: React.FC<{ currentView: View, setCurrentView: (v: View, selectedDay?: number) => void }> = ({ currentView, setCurrentView }) => (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2d1b14] border-t-2 border-[#5d4037] flex justify-around p-2">
         <MobileNavButton view={View.DASHBOARD} icon="dashboard" label="Start" current={currentView} onClick={setCurrentView} />
         <MobileNavButton view={View.CALENDAR} icon="calendar_month" label="Planer" current={currentView} onClick={setCurrentView} />
@@ -432,7 +444,7 @@ const NavButton: React.FC<{ view: View; icon: string; label: string; current: Vi
   );
 };
 
-const MobileNavButton: React.FC<{ view: View; icon: string; label: string; current: View; onClick: (v: View) => void; }> = ({ view, icon, label, current, onClick }) => {
+const MobileNavButton: React.FC<{ view: View; icon: string; label: string; current: View; onClick: (v: View, selectedDay?: number) => void; }> = ({ view, icon, label, current, onClick }) => {
   const active = current === view;
   return (
     <button onClick={() => onClick(view)} className={`flex flex-col items-center transition-colors ${active ? 'text-elf-gold' : 'text-amber-200/70'}`}>

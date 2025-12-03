@@ -96,6 +96,10 @@ const KidsZone: React.FC<Props> = ({ elfConfig, calendar, kids, onExit }) => {
                 </div>
              )}
 
+             <div className="mt-8">
+                <Recipes />
+             </div>
+
              <div className="text-center mt-12 text-slate-500 text-xs opacity-50">
                  3x tippen zum Verlassen
              </div>

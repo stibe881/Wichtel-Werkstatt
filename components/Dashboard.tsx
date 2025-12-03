@@ -5,7 +5,7 @@ interface Props {
     state: AppState;
     activeElf: ElfConfig;
     weather: { temp: number; condition: string };
-    setCurrentView: (view: View) => void;
+    setCurrentView: (view: View, selectedDay?: number) => void;
     handlePanicMovement: (elf: ElfConfig) => void;
     handlePanicPreparation: (elf: ElfConfig) => void;
 }
@@ -116,7 +116,10 @@ const Dashboard: React.FC<Props> = ({ state, activeElf, weather, setCurrentView,
                 <div className="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
                     <h3 className="font-bold text-lg mb-3 text-elf-dark">Nächster Plan</h3>
                     {nextPlannedDay ? (
-                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div
+                            onClick={() => setCurrentView(View.CALENDAR, nextPlannedDay.day)}
+                            className="bg-slate-50 p-4 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-all hover:shadow-md"
+                        >
                             <p className="text-sm text-slate-500 font-bold">Tag {nextPlannedDay.day}</p>
                             <h4 className="font-bold text-xl my-1 text-elf-dark">{nextPlannedDay.idea?.title}</h4>
                             <p className="text-sm text-slate-600 line-clamp-2">{nextPlannedDay.idea?.description}</p>

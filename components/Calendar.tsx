@@ -8,10 +8,11 @@ interface Props {
   onUpdateDay: (day: number, updates: Partial<CalendarDay>) => void;
   elfConfig: ElfConfig;
   kids: Kid[]; // Added kids prop
+  initialSelectedDay?: number;
 }
 
-const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfig, kids }) => {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+const Calendar: React.FC<Props> = ({ calendar, savedIdeas, onUpdateDay, elfConfig, kids, initialSelectedDay }) => {
+  const [selectedDay, setSelectedDay] = useState<number | null>(initialSelectedDay || null);
   const [draggedIdea, setDraggedIdea] = useState<Idea | null>(null);
   const [draggedFromDay, setDraggedFromDay] = useState<number | null>(null);
   const [generatingMessage, setGeneratingMessage] = useState(false);
