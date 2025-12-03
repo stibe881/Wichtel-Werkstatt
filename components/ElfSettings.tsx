@@ -170,7 +170,12 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
           )}
         </div>
         {showWizard && (
-          <ElfWizard onComplete={handleWizardComplete} onCancel={() => setShowWizard(false)} />
+          <ElfWizard
+            isOpen={showWizard}
+            onClose={() => setShowWizard(false)}
+            onCreateElf={handleWizardComplete}
+            kids={state.kids}
+          />
         )}
       </>
     );
