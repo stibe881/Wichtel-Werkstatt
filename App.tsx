@@ -143,24 +143,26 @@ const App: React.FC = () => {
   // The ElfSettings component will handle the "no elf" case.
   return (
     <div className="flex h-screen bg-[#2d1b14] font-sans text-slate-900 overflow-hidden">
-      <NavSidebar currentView={currentView} setCurrentView={setCurrentView} handleLogout={handleLogout} />
+      {currentView !== View.KIDS_ZONE && <NavSidebar currentView={currentView} setCurrentView={setCurrentView} handleLogout={handleLogout} />}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="bg-[#2d1b14] border-b border-[#5d4037] px-4 py-3 flex justify-between items-center shadow-lg z-10 flex-shrink-0">
-            <h2 className="text-xl font-bold text-amber-100 font-serif capitalize">
-                {View[currentView].replace('_', ' ')}
-            </h2>
-            {activeElf && (
-                <div className="flex items-center gap-3">
-                    <div className="text-right">
-                        <p className="text-sm font-bold text-amber-100">{activeElf.name}</p>
-                        <p className="text-xs text-amber-200/60">Aktiver Wichtel</p>
+        {currentView !== View.KIDS_ZONE && (
+            <header className="bg-[#2d1b14] border-b border-[#5d4037] px-4 py-3 flex justify-between items-center shadow-lg z-10 flex-shrink-0">
+                <h2 className="text-xl font-bold text-amber-100 font-serif capitalize">
+                    {View[currentView].replace('_', ' ')}
+                </h2>
+                {activeElf && (
+                    <div className="flex items-center gap-3">
+                        <div className="text-right">
+                            <p className="text-sm font-bold text-amber-100">{activeElf.name}</p>
+                            <p className="text-xs text-amber-200/60">Aktiver Wichtel</p>
+                        </div>
+                        <div onClick={() => setCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer">
+                            {activeElf.name.charAt(0) || '?'}
+                        </div>
                     </div>
-                    <div onClick={() => setCurrentView(View.SETTINGS)} className="w-10 h-10 bg-[#855E42] rounded-full flex items-center justify-center text-amber-100 font-serif font-bold border-2 border-[#5d4037] cursor-pointer">
-                        {activeElf.name.charAt(0) || '?'}
-                    </div>
-                </div>
-            )}
-        </header>
+                )}
+            </header>
+        )}
         <div className="flex-1 overflow-y-auto p-6 bg-[#d4c5a5]">
             <Content
                 currentView={currentView}
@@ -170,7 +172,7 @@ const App: React.FC = () => {
                 weather={weather}
             />
         </div>
-        <MobileNav currentView={currentView} setCurrentView={setCurrentView} />
+        {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={setCurrentView} />}
       </main>
     </div>
   );
@@ -221,7 +223,14 @@ const Content: React.FC<{ currentView: View, state: AppState, setState: React.Di
             return <KidsZone elfConfig={activeElf} calendar={state.calendar} kids={state.kids} onExit={() => setState(prev => ({...prev, currentView: View.DASHBOARD}))} />;
         case View.DASHBOARD:
         default:
-            return <Dashboard state={state} activeElf={activeElf} weather={weather} />;
+            return <Dashboard 
+                state={state} 
+                activeElf={activeElf} 
+                weather={weather} 
+                setCurrentView={setCurrentView}
+                handlePanicMovement={handlePanicMovement}
+                handlePanicPreparation={handlePanicPreparation}
+            />;
     }
 };
 

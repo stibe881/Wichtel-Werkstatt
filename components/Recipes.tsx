@@ -109,55 +109,14 @@ const RECIPES: Recipe[] = [
 
 const Recipes: React.FC = () => {
     const [filter, setFilter] = useState<'all' | 'food' | 'drink'>('all');
+    const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
-    const handlePrintRecipe = (recipe: Recipe) => {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.write(`
-                <html>
-                <head>
-                    <title>Rezept: ${recipe.title}</title>
-                    <style>
-                        body { font-family: 'Georgia', serif; padding: 20px; background: #fff; color: #2d1b14; }
-                        .card { 
-                            border: 4px double #855E42; 
-                            padding: 30px; 
-                            max-width: 105mm; /* A6 width approx */
-                            margin: 0 auto;
-                            background-color: #fffdf5;
-                            border-radius: 8px;
-                        }
-                        h1 { text-align: center; color: #D42426; font-size: 24px; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
-                        .meta { text-align: center; font-style: italic; color: #855E42; margin-bottom: 20px; font-size: 14px; }
-                        h3 { color: #855E42; border-bottom: 1px solid #e6dac0; padding-bottom: 5px; font-size: 16px; margin-top: 20px; }
-                        ul, ol { font-size: 14px; line-height: 1.6; }
-                        li { margin-bottom: 5px; }
-                        .footer { text-align: center; margin-top: 30px; font-size: 10px; text-transform: uppercase; color: #ccc; }
-                    </style>
-                </head>
-                <body>
-                    <div class="card">
-                        <h1>${recipe.title}</h1>
-                        <div class="meta">"${recipe.desc}"</div>
-                        
-                        <h3>Zutaten</h3>
-                        <ul>
-                            ${recipe.ingredients.map(i => `<li>${i}</li>`).join('')}
-                        </ul>
+    const handleOpenModal = (recipe: Recipe) => {
+        setSelectedRecipe(recipe);
+    };
 
-                        <h3>Zubereitung</h3>
-                        <ol>
-                            ${recipe.steps.map(s => `<li>${s}</li>`).join('')}
-                        </ol>
-
-                        <div class="footer">Wichtel-Bäckerei • Offizielles Rezept</div>
-                    </div>
-                    <script>window.onload = function(){ window.print(); }</script>
-                </body>
-                </html>
-            `);
-            win.document.close();
-        }
+    const handleCloseModal = () => {
+        setSelectedRecipe(null);
     };
 
     const displayedRecipes = RECIPES.filter(r => filter === 'all' || r.category === filter);
@@ -170,14 +129,14 @@ const Recipes: React.FC = () => {
                 <div className="inline-block p-4 bg-white rounded-full shadow-wood-bezel border-4 border-[#d4c5a5] mb-4">
                     <span className="material-icons-round text-elf-red text-4xl sm:text-5xl">bakery_dining</span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#amber-100] text-shadow mb-2 text-white">
+                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white text-shadow mb-2">
                     Wichtel-Bäckerei
                 </h2>
                 <p className="text-amber-200/80 italic font-serif text-base sm:text-lg">Geheime Rezepte aus der Nordpol-Kantine</p>
              </div>
 
              {/* Filter Tabs */}
-             <div className="flex justify-center gap-2 flex-wrap">
+             <div className="flex justify-center gap-2 mb-8 overflow-x-auto no-scrollbar">
                  <button 
                     onClick={() => setFilter('all')}
                     className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-all border-2 ${
@@ -216,7 +175,7 @@ const Recipes: React.FC = () => {
              <div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {displayedRecipes.map((r, i) => (
-                        <RecipeCard key={r.title} recipe={r} index={i} onPrint={handlePrintRecipe} />
+                        <RecipeCard key={r.title} recipe={r} index={i} onOpenModal={handleOpenModal} />
                     ))}
                     {displayedRecipes.length === 0 && (
                         <div className="col-span-full text-center py-12 text-amber-100/50">
@@ -225,12 +184,19 @@ const Recipes: React.FC = () => {
                     )}
                 </div>
              </div>
+
+            {selectedRecipe && (
+                <RecipeModal recipe={selectedRecipe} onClose={handleCloseModal} />
+            )}
         </div>
     );
 };
 
-const RecipeCard: React.FC<{ recipe: Recipe, index: number, onPrint: (r: Recipe) => void }> = ({ recipe, index, onPrint }) => (
-    <div className="bg-[#fcfaf2] p-4 sm:p-5 rounded-xl border-2 border-[#e6dac0] shadow-lg relative group hover:border-elf-gold transition-all flex flex-col h-full">
+const RecipeCard: React.FC<{ recipe: Recipe, index: number, onOpenModal: (r: Recipe) => void }> = ({ recipe, index, onOpenModal }) => (
+    <div 
+        onClick={() => onOpenModal(recipe)}
+        className="bg-[#fcfaf2] p-4 sm:p-5 rounded-xl border-2 border-[#e6dac0] shadow-lg relative group hover:border-elf-gold transition-all flex flex-col h-full cursor-pointer"
+    >
         {/* Number Badge */}
         <div className="absolute -top-3 -right-3 bg-[#2d1b14] text-elf-gold w-8 h-8 flex items-center justify-center rounded-full font-bold shadow-md border-2 border-[#5d4037]">
             {index + 1}
@@ -244,24 +210,54 @@ const RecipeCard: React.FC<{ recipe: Recipe, index: number, onPrint: (r: Recipe)
         <div className="bg-white p-3 rounded border border-[#e6dac0] mb-3 shadow-inner">
             <h4 className="text-[10px] font-bold uppercase text-[#855E42] mb-2 border-b border-slate-100 pb-1">Zutaten</h4>
             <ul className="text-xs text-slate-700 list-disc list-inside space-y-0.5">
-                {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
+                {recipe.ingredients.slice(0, 3).map((ing, idx) => <li key={idx}>{ing}</li>)}
+                {recipe.ingredients.length > 3 && <li className="text-slate-400">...und mehr</li>}
             </ul>
         </div>
         
-        <div className="flex-1">
-            <h4 className="text-[10px] font-bold uppercase text-[#855E42] mb-2">Zubereitung</h4>
-            <ol className="text-xs text-slate-700 list-decimal list-inside space-y-1.5 leading-relaxed">
-                {recipe.steps.map((s, idx) => <li key={idx}>{s}</li>)}
-            </ol>
-        </div>
-
         <button 
-            onClick={() => onPrint(recipe)}
             className="mt-6 w-full py-2 bg-[#e6dac0] text-[#2d1b14] font-bold text-xs uppercase tracking-wider rounded hover:bg-elf-gold hover:text-elf-dark transition-colors flex items-center justify-center gap-2"
         >
-            <span className="material-icons-round text-sm">print</span>
-            Rezept drucken
+            <span className="material-icons-round text-sm">visibility</span>
+            Rezept ansehen
         </button>
+    </div>
+);
+
+const RecipeModal: React.FC<{ recipe: Recipe, onClose: () => void }> = ({ recipe, onClose }) => (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="bg-[#fcfaf2] w-full max-w-lg rounded shadow-2xl animate-slide-up border-4 border-[#2d1b14] flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b-2 border-[#e6dac0] flex justify-between items-center bg-[#f9f5e6]">
+                <h3 className="font-bold text-xl text-elf-dark font-serif">{recipe.title}</h3>
+                <button onClick={onClose} className="p-2 hover:bg-[#e6dac0] rounded-full">
+                    <span className="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <div className="overflow-y-auto p-6 space-y-6 bg-parchment">
+                <p className="text-slate-700 italic">{recipe.desc}</p>
+                
+                <div>
+                    <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zutaten</h4>
+                    <ul className="list-disc list-inside text-slate-700 space-y-1">
+                        {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 className="font-bold text-sm uppercase text-[#855E42] mb-2">Zubereitung</h4>
+                    <ol className="list-decimal list-inside text-slate-700 space-y-1.5">
+                        {recipe.steps.map((step, idx) => <li key={idx}>{step}</li>)}
+                    </ol>
+                </div>
+            </div>
+
+            <div className="p-4 border-t-2 border-[#e6dac0] flex justify-end bg-[#f9f5e6]">
+                <button onClick={() => window.print()} className="bg-elf-gold text-elf-dark px-4 py-2 rounded font-bold shadow-md">
+                    <span className="material-icons-round text-sm">print</span> Rezept drucken
+                </button>
+            </div>
+        </div>
     </div>
 );
 

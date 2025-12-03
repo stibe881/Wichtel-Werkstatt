@@ -10,27 +10,51 @@ interface Props {
 
 const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
   const [newKidName, setNewKidName] = useState('');
+  const [newKidAge, setNewKidAge] = useState(5);
   const [newElfName, setNewElfName] = useState('');
 
+  // --- Kid Management ---
   const createNewKid = () => {
     if (!newKidName.trim()) return;
     const newKid: Kid = {
       id: uuidv4(),
       name: newKidName.trim(),
-      age: 1,
+      age: newKidAge,
       gender: 'boy'
     };
     setState(prev => ({ ...prev, kids: [...prev.kids, newKid] }));
     setNewKidName('');
+    setNewKidAge(5);
   };
   
+  const updateKid = (id: string, updatedKid: Partial<Kid>) => {
+    setState(prev => ({
+      ...prev,
+      kids: prev.kids.map(k => k.id === id ? { ...k, ...updatedKid } : k)
+    }));
+  };
+
+  const deleteKid = (id: string, name: string) => {
+    if (window.confirm(`Sind Sie sicher, dass Sie ${name} löschen möchten? Das Kind wird auch von allen Wichteln entfernt.`)) {
+      setState(prev => ({
+          ...prev,
+          kids: prev.kids.filter(k => k.id !== id),
+          elves: prev.elves.map(elf => ({
+              ...elf,
+              kidIds: elf.kidIds.filter(kidId => kidId !== id)
+          }))
+      }));
+    }
+  };
+
+  // --- Elf Management ---
   const createNewElf = () => {
     if (!newElfName.trim()) return;
     const newElf: ElfConfig = {
       id: uuidv4(),
       name: newElfName.trim(),
       personality: 'frech und verspielt',
-      kidIds: [],
+      kidIds: state.kids.map(k => k.id), // Assign all existing kids by default
       arrivalDate: '2025-12-01',
       departureDate: '2025-12-24',
     };
@@ -44,13 +68,6 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
     setNewElfName('');
   };
 
-  const updateKid = (id: string, updatedKid: Partial<Kid>) => {
-    setState(prev => ({
-      ...prev,
-      kids: prev.kids.map(k => k.id === id ? { ...k, ...updatedKid } : k)
-    }));
-  };
-  
   const updateElf = (id: string, updatedElf: Partial<ElfConfig>) => {
       setState(prev => ({
           ...prev,
@@ -58,18 +75,8 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
       }));
   };
 
-  const deleteKid = (id: string) => {
-    setState(prev => ({
-        ...prev,
-        kids: prev.kids.filter(k => k.id !== id),
-        elves: prev.elves.map(elf => ({
-            ...elf,
-            kidIds: elf.kidIds.filter(kidId => kidId !== id)
-        }))
-    }));
-  };
-
-  const deleteElf = (id: string) => {
+  const deleteElf = (id: string, name: string) => {
+    if (window.confirm(`Sind Sie sicher, dass Sie den Wichtel ${name} löschen möchten?`)) {
       setState(prev => {
           const remainingElves = prev.elves.filter(e => e.id !== id);
           let newActiveElfId = prev.activeElfId;
@@ -82,9 +89,23 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
               activeElfId: newActiveElfId
           };
       });
+    }
+  };
+  
+  const toggleKidForElf = (elfId: string, kidId: string) => {
+      const elf = state.elves.find(e => e.id === elfId);
+      if (!elf) return;
+      
+      const newKidIds = elf.kidIds.includes(kidId)
+          ? elf.kidIds.filter(id => id !== kidId)
+          : [...elf.kidIds, kidId];
+      
+      updateElf(elfId, { kidIds: newKidIds });
   };
 
-  // If no elves exist, show a dedicated setup screen.
+  // --- Render Logic ---
+
+  // If no elves exist, show a dedicated setup screen to create the first one.
   if (state.elves.length === 0) {
     return (
       <div className="w-full max-w-lg mx-auto text-center py-16">
@@ -128,38 +149,77 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
         <p className="text-slate-500">Verwalten Sie hier Ihre Wichtel und die zugehörigen Kinder.</p>
       </div>
 
+      {/* Kids Management */}
+       <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h2 className="font-bold text-lg mb-4">Ihre Kinder</h2>
+        <div className="space-y-3">
+          {state.kids.map(kid => (
+            <div key={kid.id} className="p-3 border rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 grid grid-cols-2 gap-3 items-center">
+                    <input 
+                        type="text"
+                        value={kid.name}
+                        onChange={(e) => updateKid(kid.id, { name: e.target.value })}
+                        className="p-2 border-b-2"
+                    />
+                     <input 
+                        type="number"
+                        value={kid.age}
+                        onChange={(e) => updateKid(kid.id, { age: parseInt(e.target.value) || 0 })}
+                        className="p-2 border-b-2 w-20"
+                    />
+                </div>
+                 <button onClick={() => deleteKid(kid.id, kid.name)} className="text-xs p-2 bg-red-100 text-red-700 rounded">Löschen</button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row gap-2">
+            <input value={newKidName} onChange={e => setNewKidName(e.target.value)} placeholder="Name des Kindes" className="flex-grow p-2 border rounded" />
+            <input type="number" value={newKidAge} onChange={e => setNewKidAge(parseInt(e.target.value) || 0)} placeholder="Alter" className="w-24 p-2 border rounded" />
+            <button onClick={createNewKid} className="p-2 bg-green-200 rounded">Kind hinzufügen</button>
+        </div>
+      </div>
+
       {/* Elves Management */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="font-bold text-lg mb-4">Ihre Wichtel</h2>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {state.elves.map(elf => (
-            <div key={elf.id} className="p-4 border rounded-lg">
-                <p><strong>{elf.name}</strong> {state.activeElfId === elf.id && <span className="text-xs text-green-600 font-bold">(Aktiv)</span>}</p>
-                 <button onClick={() => setState(prev => ({...prev, activeElfId: elf.id}))} disabled={state.activeElfId === elf.id} className="text-xs p-1 bg-blue-100 disabled:bg-slate-200">Aktivieren</button>
-                 <button onClick={() => deleteElf(elf.id)} className="text-xs p-1 bg-red-100 ml-2">Löschen</button>
+            <div key={elf.id} className="p-4 border rounded-lg bg-slate-50">
+                <div className="flex justify-between items-start">
+                    <input 
+                        type="text"
+                        value={elf.name}
+                        onChange={(e) => updateElf(elf.id, { name: e.target.value })}
+                        className="font-bold text-lg p-1"
+                    />
+                    <div>
+                        <button onClick={() => setState(prev => ({...prev, activeElfId: elf.id}))} disabled={state.activeElfId === elf.id} className="text-xs px-2 py-1 bg-blue-100 disabled:bg-blue-300 rounded">Aktiv</button>
+                        <button onClick={() => deleteElf(elf.id, elf.name)} className="text-xs px-2 py-1 bg-red-100 ml-2 rounded">Löschen</button>
+                    </div>
+                </div>
+                <div className="mt-4">
+                    <h4 className="text-sm font-semibold mb-2">Zugeordnete Kinder:</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {state.kids.map(kid => (
+                            <label key={kid.id} className="flex items-center gap-2 p-2 border rounded cursor-pointer">
+                                <input 
+                                    type="checkbox"
+                                    checked={elf.kidIds.includes(kid.id)}
+                                    onChange={() => toggleKidForElf(elf.id, kid.id)}
+                                />
+                                {kid.name}
+                            </label>
+                        ))}
+                         {state.kids.length === 0 && <p className="text-xs text-slate-500">Bitte legen Sie zuerst Kinder an.</p>}
+                    </div>
+                </div>
             </div>
           ))}
         </div>
         <div className="mt-4 pt-4 border-t flex gap-2">
             <input value={newElfName} onChange={e => setNewElfName(e.target.value)} placeholder="Neuer Wichtel-Name" className="flex-grow p-2 border rounded" />
-            <button onClick={createNewElf} className="p-2 bg-green-200 rounded">Hinzufügen</button>
-        </div>
-      </div>
-
-       {/* Kids Management */}
-       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h2 className="font-bold text-lg mb-4">Ihre Kinder</h2>
-        <div className="space-y-4">
-          {state.kids.map(kid => (
-            <div key={kid.id} className="p-4 border rounded-lg flex justify-between items-center">
-                <p><strong>{kid.name}</strong> ({kid.age} Jahre)</p>
-                 <button onClick={() => deleteKid(kid.id)} className="text-xs p-1 bg-red-100">Löschen</button>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 pt-4 border-t flex gap-2">
-            <input value={newKidName} onChange={e => setNewKidName(e.target.value)} placeholder="Neues Kind-Name" className="flex-grow p-2 border rounded" />
-            <button onClick={createNewKid} className="p-2 bg-green-200 rounded">Hinzufügen</button>
+            <button onClick={createNewElf} className="p-2 bg-green-200 rounded">Wichtel hinzufügen</button>
         </div>
       </div>
     </div>

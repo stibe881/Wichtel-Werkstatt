@@ -43,6 +43,43 @@ app.post('/state/:userId', async (req, res) => {
     }
 });
 
+// Proxy for Gemini API
+app.post('/api/generate', async (req, res) => {
+    const { prompt, schema } = req.body;
+
+    if (!prompt) {
+        return res.status(400).send({ error: 'Prompt is required.' });
+    }
+    
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("API key is not configured on the server.");
+        }
+        const ai = new (require("@google/genai").GoogleGenAI)({ apiKey });
+
+        const config: any = {
+            responseMimeType: schema ? "application/json" : "text/plain",
+        };
+        if (schema) {
+            config.responseSchema = schema;
+        }
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: config,
+        });
+        
+        res.send({ text: response.text });
+
+    } catch (error) {
+        console.error('Error generating content via proxy:', error);
+        res.status(500).send({ error: 'Failed to generate content.' });
+    }
+});
+
+
 
 initDB().then(() => {
     app.listen(port, () => {
