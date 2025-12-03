@@ -44,7 +44,7 @@ app.post('/state/:userId', async (req, res) => {
 });
 
 // Proxy for Gemini API
-app.post('/api/generate', async (req, res) => {
+app.post('/generate', async (req, res) => {
     const { prompt, schema } = req.body;
 
     if (!prompt) {
