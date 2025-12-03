@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { GoogleGenerativeAI } from '@google/genai';
 import { initDB, getState, saveState } from './db';
 
 const app = express();
@@ -56,22 +57,14 @@ app.post('/generate', async (req, res) => {
         if (!apiKey) {
             throw new Error("API key is not configured on the server.");
         }
-        const ai = new (require("@google/genai").GoogleGenAI)({ apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
 
-        const config: any = {
-            responseMimeType: schema ? "application/json" : "text/plain",
-        };
-        if (schema) {
-            config.responseSchema = schema;
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: prompt,
-            config: config,
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
         
-        res.send({ text: response.text });
+        res.send({ text });
 
     } catch (error) {
         console.error('Error generating content via proxy:', error);
