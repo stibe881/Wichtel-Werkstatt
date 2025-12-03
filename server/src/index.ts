@@ -58,7 +58,7 @@ app.post('/generate', async (req, res) => {
             throw new Error("API key is not configured on the server.");
         }
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "models/gemini-pro"}); // Changed to full model path
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"}); // Using current Gemini model
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
