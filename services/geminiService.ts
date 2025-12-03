@@ -167,3 +167,29 @@ export const generateDailyMessage = async (
     // Reusing the existing generateElfLetter function
     return generateElfLetter(elf, kids, topic, tone, voice);
   };
+
+export const generateShoppingListEnhancement = async (items: string[]): Promise<string[]> => {
+    const prompt = `
+        OPTIMIERE die folgende Einkaufsliste für die Wichtel-Werkstatt.
+        Fasse Duplikate zusammen, korrigiere Tippfehler und gruppiere ähnliche Artikel.
+        Beispiel: "Zuckerstangen, zucker stangen, 1x Zucker-Stange" wird zu "Zuckerstangen".
+        Gib NUR die optimierte Liste als JSON-Array zurück.
+
+        Liste zum Optimieren:
+        ${JSON.stringify(items)}
+    `;
+    try {
+        const schema = {
+            type: "ARRAY",
+            items: { type: "STRING" }
+        };
+        // The backend will return a JSON array string, which we need to parse.
+        const result = await generateContent(prompt, schema);
+        // Assuming the result is already parsed by generateContent if a schema is provided.
+        return result || [];
+    } catch (e) {
+        console.error("Error optimizing shopping list:", e);
+        // Return original items on error to prevent data loss
+        return items;
+    }
+};

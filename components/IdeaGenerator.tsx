@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Idea, ElfConfig } from '../types';
+import { Idea, ElfConfig, Kid } from '../types';
 import { chatWithIdeaAssistant } from '../services/geminiService';
+import IdeaWizard from './IdeaWizard'; // Import IdeaWizard
 
 interface Props {
   elfConfig: ElfConfig;
   onAddIdea: (idea: Idea) => void;
   existingIdeas: Idea[];
-  kids: Kid[]; // Added kids prop
+  kids: Kid[];
 }
 
 interface ChatMessage {
@@ -16,7 +17,7 @@ interface ChatMessage {
   ideas?: Idea[];
 }
 
-const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, kids }) => { // Added kids prop
+const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, kids }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -27,9 +28,9 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
     }
   ]);
   
-  // Default to collection view on mobile
   const [activeTab, setActiveTab] = useState<'collection' | 'chat'>('collection');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showIdeaWizard, setShowIdeaWizard] = useState(false); // New state for IdeaWizard
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +60,7 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
     const history = messages.map(m => ({ role: m.role, text: m.text }));
     const excludeTitles = existingIdeas.map(i => i.title);
 
-    const response = await chatWithIdeaAssistant(textToSend, history, elfConfig, kids, excludeTitles); // Pass kids
+    const response = await chatWithIdeaAssistant(textToSend, history, elfConfig, kids, excludeTitles);
 
     const aiMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
@@ -156,6 +157,15 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                 <div className="flex justify-end mb-4">
+                     <button 
+                         onClick={() => setShowIdeaWizard(true)} // Open wizard
+                         className="bg-elf-green text-white px-4 py-2 rounded font-bold shadow-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                     >
+                         <span className="material-icons-round text-sm">add</span>
+                         Eigene Idee
+                     </button>
+                 </div>
                  {filteredSavedIdeas.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
                          <span className="material-icons-round text-6xl mb-2 text-[#d4c5a5]">inventory_2</span>
@@ -299,6 +309,9 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
             </div>
         </div>
       </div>
+      {showIdeaWizard && (
+          <IdeaWizard onComplete={(idea) => { onAddIdea(idea); setShowIdeaWizard(false); }} onCancel={() => setShowIdeaWizard(false)} />
+      )}
     </div>
   );
 };
