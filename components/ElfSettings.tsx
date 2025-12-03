@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppState, Kid, ElfConfig } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import ConfirmModal from './ConfirmModal'; // Import the new modal
 
 interface Props {
   state: AppState;
@@ -12,6 +13,7 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
   const [newKidName, setNewKidName] = useState('');
   const [newKidAge, setNewKidAge] = useState(5);
   const [newElfName, setNewElfName] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState<{type: 'kid' | 'elf', id: string, name: string} | null>(null);
 
   // --- Kid Management ---
   const createNewKid = () => {
@@ -34,17 +36,16 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
     }));
   };
 
-  const deleteKid = (id: string, name: string) => {
-    if (window.confirm(`Sind Sie sicher, dass Sie ${name} löschen möchten? Das Kind wird auch von allen Wichteln entfernt.`)) {
-      setState(prev => ({
-          ...prev,
-          kids: prev.kids.filter(k => k.id !== id),
-          elves: prev.elves.map(elf => ({
-              ...elf,
-              kidIds: elf.kidIds.filter(kidId => kidId !== id)
-          }))
-      }));
-    }
+  const deleteKid = (id: string) => {
+    setState(prev => ({
+        ...prev,
+        kids: prev.kids.filter(k => k.id !== id),
+        elves: prev.elves.map(elf => ({
+            ...elf,
+            kidIds: elf.kidIds.filter(kidId => kidId !== id)
+        }))
+    }));
+    setConfirmingDelete(null);
   };
 
   // --- Elf Management ---
@@ -75,23 +76,32 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
       }));
   };
 
-  const deleteElf = (id: string, name: string) => {
-    if (window.confirm(`Sind Sie sicher, dass Sie den Wichtel ${name} löschen möchten?`)) {
-      setState(prev => {
-          const remainingElves = prev.elves.filter(e => e.id !== id);
-          let newActiveElfId = prev.activeElfId;
-          if (prev.activeElfId === id) {
-              newActiveElfId = remainingElves.length > 0 ? remainingElves[0].id : null;
-          }
-          return {
-              ...prev,
-              elves: remainingElves,
-              activeElfId: newActiveElfId
-          };
-      });
-    }
+  const deleteElf = (id: string) => {
+    setState(prev => {
+        const remainingElves = prev.elves.filter(e => e.id !== id);
+        let newActiveElfId = prev.activeElfId;
+        if (prev.activeElfId === id) {
+            newActiveElfId = remainingElves.length > 0 ? remainingElves[0].id : null;
+        }
+        return {
+            ...prev,
+            elves: remainingElves,
+            activeElfId: newActiveElfId
+        };
+    });
+    setConfirmingDelete(null);
   };
   
+  const handleConfirmDelete = () => {
+      if (confirmingDelete) {
+          if (confirmingDelete.type === 'kid') {
+              deleteKid(confirmingDelete.id);
+          } else if (confirmingDelete.type === 'elf') {
+              deleteElf(confirmingDelete.id);
+          }
+      }
+  };
+
   const toggleKidForElf = (elfId: string, kidId: string) => {
       const elf = state.elves.find(e => e.id === elfId);
       if (!elf) return;
@@ -144,6 +154,14 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {confirmingDelete && (
+          <ConfirmModal
+              title={`Bist du sicher?`}
+              message={`Möchtest du ${confirmingDelete.name} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+              onConfirm={handleConfirmDelete}
+              onCancel={() => setConfirmingDelete(null)}
+          />
+      )}
       <div>
         <h1 className="text-2xl font-bold font-serif text-elf-dark">Wichtel & Kinder Profile</h1>
         <p className="text-slate-500">Verwalten Sie hier Ihre Wichtel und die zugehörigen Kinder.</p>
@@ -169,7 +187,7 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
                         className="p-2 border-b-2 w-20"
                     />
                 </div>
-                 <button onClick={() => deleteKid(kid.id, kid.name)} className="text-xs p-2 bg-red-100 text-red-700 rounded">Löschen</button>
+                 <button onClick={() => setConfirmingDelete({ type: 'kid', id: kid.id, name: kid.name })} className="text-xs p-2 bg-red-100 text-red-700 rounded">Löschen</button>
             </div>
           ))}
         </div>
@@ -195,7 +213,7 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
                     />
                     <div>
                         <button onClick={() => setState(prev => ({...prev, activeElfId: elf.id}))} disabled={state.activeElfId === elf.id} className="text-xs px-2 py-1 bg-blue-100 disabled:bg-blue-300 rounded">Aktiv</button>
-                        <button onClick={() => deleteElf(elf.id, elf.name)} className="text-xs px-2 py-1 bg-red-100 ml-2 rounded">Löschen</button>
+                        <button onClick={() => setConfirmingDelete({ type: 'elf', id: elf.id, name: elf.name })} className="text-xs px-2 py-1 bg-red-100 ml-2 rounded">Löschen</button>
                     </div>
                 </div>
                 <div className="mt-4">
