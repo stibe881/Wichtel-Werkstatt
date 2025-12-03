@@ -79,11 +79,16 @@ const App: React.FC = () => {
             // Use saved ideas from backend if they exist (even if empty), otherwise fall back to starters.
             const finalIdeas = data?.savedIdeas ?? STARTER_IDEAS;
             const mergedState: AppState = { ...DEFAULT_STATE, ...data, savedIdeas: finalIdeas };
-            
+
             if (mergedState.elves.length > 0 && !mergedState.activeElfId) {
                 mergedState.activeElfId = mergedState.elves[0].id;
             }
             setState(mergedState);
+
+            // Redirect to Settings if no elves exist
+            if (mergedState.elves.length === 0) {
+                setCurrentView(View.SETTINGS);
+            }
         })
         .catch(error => console.error("Could not sync state:", error))
         .finally(() => {
