@@ -71,8 +71,10 @@ const App: React.FC = () => {
       fetch(`${API_URL}/state/${encodeURIComponent(userId)}`)
         .then(res => res.ok ? res.json() : Promise.reject(`Failed to fetch: ${res.status}`))
         .then(data => {
-            const finalIdeas = (data && data.savedIdeas && data.savedIdeas.length > 0) ? data.savedIdeas : STARTER_IDEAS;
+            // Use saved ideas from backend if they exist (even if empty), otherwise fall back to starters.
+            const finalIdeas = data?.savedIdeas ?? STARTER_IDEAS;
             const mergedState: AppState = { ...DEFAULT_STATE, ...data, savedIdeas: finalIdeas };
+            
             if (mergedState.elves.length > 0 && !mergedState.activeElfId) {
                 mergedState.activeElfId = mergedState.elves[0].id;
             }
