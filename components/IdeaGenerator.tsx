@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Idea, ElfConfig, Kid } from '../types';
 import { chatWithIdeaAssistant } from '../services/geminiService';
 import IdeaWizard from './IdeaWizard'; // Import IdeaWizard
+import IdeaDetail from './IdeaDetail'; // Import IdeaDetail
 
 interface Props {
   elfConfig: ElfConfig;
@@ -30,7 +31,8 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
   
   const [activeTab, setActiveTab] = useState<'collection' | 'chat'>('collection');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showIdeaWizard, setShowIdeaWizard] = useState(false); // New state for IdeaWizard
+  const [showIdeaWizard, setShowIdeaWizard] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +101,15 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] max-w-7xl mx-auto bg-[#e6dac0] rounded-xl shadow-2xl overflow-hidden border-4 border-[#5d4037] relative">
       
+      {selectedIdea && (
+        <IdeaDetail 
+            idea={selectedIdea}
+            onClose={() => setSelectedIdea(null)}
+            onAdd={(idea) => { onAddIdea(idea); setSelectedIdea(null); }}
+            isSaved={existingIdeas.some(i => i.id === selectedIdea.id)}
+        />
+      )}
+
       {/* Wooden Header Frame */}
       <div className="bg-wood-texture p-4 border-b-4 border-[#2d1b14] flex justify-between items-center shadow-lg relative z-10">
           <div className="flex items-center gap-3">
@@ -175,7 +186,11 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, existingIdeas, k
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                         {filteredSavedIdeas.map(idea => (
-                            <div key={idea.id} className="bg-white p-5 rounded-2xl border-2 border-[#e6dac0] shadow-md relative group hover:border-elf-gold transition-all hover:-translate-y-1 hover:shadow-xl flex flex-col h-full">
+                            <div 
+                                key={idea.id} 
+                                onClick={() => setSelectedIdea(idea)}
+                                className="bg-white p-5 rounded-2xl border-2 border-[#e6dac0] shadow-md relative group hover:border-elf-gold transition-all hover:-translate-y-1 hover:shadow-xl flex flex-col h-full cursor-pointer"
+                            >
                                 {/* Tape effect */}
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-8 h-4 bg-yellow-100/50 border-l border-r border-white/40 rotate-1 shadow-sm opacity-80"></div>
                                 
