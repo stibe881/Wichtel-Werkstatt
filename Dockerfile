@@ -2,11 +2,9 @@
 FROM node:20-alpine AS build
 
 # Set build-time arguments
-ARG VITE_GEMINI_API_KEY
 ARG VITE_API_URL
 
 # Set them as environment variables for the build stage
-ENV VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
 ENV VITE_API_URL=${VITE_API_URL}
 
 WORKDIR /app
@@ -21,7 +19,7 @@ RUN npm install
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN VITE_API_URL=${VITE_API_URL} npm run build
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:1.21.3-alpine
