@@ -107,6 +107,18 @@ const App: React.FC = () => {
     return () => clearTimeout(handler);
   }, [state, isAuthenticated, userId, hasLoadedFromBackend]);
 
+    const handleGenerateExcuse = async (elf: ElfConfig) => {
+        alert('Moment, ich frage kurz beim Wichtel nach...');
+        const excuse = await generateElfExcuse(elf, state.kids);
+        alert(`Wichtel-Ausrede für ${elf.name}:\n\n"${excuse}"`);
+    };
+
+    const handleGenerateLatePrep = async (elf: ElfConfig) => {
+        alert('Moment, die Zentrale schickt eine Blitz-Idee...');
+        const solution = await generateLatePreparationSolution(elf, state.kids);
+        alert(`Blitz-Idee für ${elf.name}:\n\nAnweisung: ${solution.instruction}\n\nBrief an die Kinder: "${solution.letter}"`);
+    };
+
   const handleAuth = (email: string) => {
     localStorage.setItem('wichtel_user_id', email);
     setUserId(email);
@@ -166,10 +178,13 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-6 bg-[#d4c5a5]">
             <Content
                 currentView={currentView}
+                setCurrentView={setCurrentView}
                 state={state}
                 setState={setState}
                 activeElf={activeElf}
                 weather={weather}
+                handlePanicMovement={handleGenerateExcuse}
+                handlePanicPreparation={handleGenerateLatePrep}
             />
         </div>
         {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={setCurrentView} />}
@@ -180,8 +195,17 @@ const App: React.FC = () => {
 
 // --- Helper Components ---
 
-const Content: React.FC<{ currentView: View, state: AppState, setState: React.Dispatch<React.SetStateAction<AppState>>, activeElf: ElfConfig | undefined, weather: any }> = 
-({ currentView, state, setState, activeElf, weather }) => {
+const Content: React.FC<{ 
+    currentView: View, 
+    setCurrentView: (v: View) => void,
+    state: AppState, 
+    setState: React.Dispatch<React.SetStateAction<AppState>>, 
+    activeElf: ElfConfig | undefined, 
+    weather: any,
+    handlePanicMovement: (elf: ElfConfig) => void,
+    handlePanicPreparation: (elf: ElfConfig) => void,
+}> = 
+({ currentView, setCurrentView, state, setState, activeElf, weather, handlePanicMovement, handlePanicPreparation }) => {
     if (!activeElf) {
         return <ElfSettings state={state} setState={setState} />;
     }
