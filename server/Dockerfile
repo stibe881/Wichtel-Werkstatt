@@ -4,18 +4,21 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+# RUN npm install
 
-COPY . .
-RUN npm run build
+# COPY . .
+# RUN npm run build
+
+# This is a temporary command to allow debugging inside the container
+CMD ["sh"]
 
 # Stage 2: Create the production image
-FROM node:20-alpine
+# FROM node:20-alpine
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
+# COPY --from=builder /app/package*.json ./
+# COPY --from=builder /app/node_modules ./node_modules
+# COPY --from=builder /app/dist ./dist
 
-CMD ["npm", "start"]
+# CMD ["npm", "start"]
