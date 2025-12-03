@@ -289,12 +289,29 @@ const Content: React.FC<{
     const onDeleteIdea = (ideaId: string) => {
         setState(prev => ({ ...prev, savedIdeas: prev.savedIdeas.filter(i => i.id !== ideaId) }));
     };
+    const onAddToToday = (idea: Idea) => {
+        // Find today's date
+        const today = new Date().getDate();
+
+        // Add idea to savedIdeas if not already there
+        setState(prev => {
+            const ideaExists = prev.savedIdeas.some(i => i.id === idea.id);
+            const updatedIdeas = ideaExists ? prev.savedIdeas : [...prev.savedIdeas, idea];
+
+            // Update calendar to assign this idea to today
+            const updatedCalendar = prev.calendar.map(day =>
+                day.day === today ? { ...day, idea } : day
+            );
+
+            return { ...prev, savedIdeas: updatedIdeas, calendar: updatedCalendar };
+        });
+    };
 
     switch (currentView) {
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
         case View.IDEAS:
-            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} calendar={state.calendar} />;
+            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} calendar={state.calendar} onAddToToday={onAddToToday} />;
         case View.CALENDAR:
             return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} />;
         case View.LETTERS:

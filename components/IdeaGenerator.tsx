@@ -12,6 +12,7 @@ interface Props {
   existingIdeas: Idea[];
   kids: Kid[];
   calendar: CalendarDay[];
+  onAddToToday?: (idea: Idea) => void;
 }
 
 interface ChatMessage {
@@ -21,7 +22,7 @@ interface ChatMessage {
   ideas?: Idea[];
 }
 
-const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, existingIdeas, kids, calendar }) => {
+const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, existingIdeas, kids, calendar, onAddToToday }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -313,20 +314,34 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
                                         >
                                             <div className="flex justify-between items-start mb-1">
                                                 <span className="font-bold text-elf-dark text-xs">{idea.title}</span>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (!isSaved) onAddIdea(idea);
-                                                    }}
-                                                    disabled={isSaved}
-                                                    className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase transition-colors ${
-                                                        isSaved
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-elf-gold text-elf-dark hover:bg-yellow-300 shadow-sm'
-                                                    }`}
-                                                >
-                                                    {isSaved ? 'Drin' : 'Speichern'}
-                                                </button>
+                                                <div className="flex gap-1">
+                                                    {onAddToToday && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onAddToToday(idea);
+                                                            }}
+                                                            className="text-[10px] px-2 py-1 rounded-full font-bold uppercase transition-colors bg-blue-500 text-white hover:bg-blue-600 shadow-sm"
+                                                            title="Zu Heute hinzufügen"
+                                                        >
+                                                            Heute
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!isSaved) onAddIdea(idea);
+                                                        }}
+                                                        disabled={isSaved}
+                                                        className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase transition-colors ${
+                                                            isSaved
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-elf-gold text-elf-dark hover:bg-yellow-300 shadow-sm'
+                                                        }`}
+                                                    >
+                                                        {isSaved ? 'Drin' : 'Speichern'}
+                                                    </button>
+                                                </div>
                                             </div>
                                             <p className="text-[11px] text-slate-600 line-clamp-2 leading-snug">{idea.description}</p>
                                         </div>
