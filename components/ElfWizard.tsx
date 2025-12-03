@@ -181,7 +181,7 @@ const ElfWizard: React.FC<Props> = ({ isOpen, onClose, onCreateElf, kids }) => {
                                 ) : (
                                     <>
                                         <span className="material-icons-round">auto_awesome</span>
-                                        KI-Namen generieren
+                                        ✨ Wichtel-Zauber: Namen erschaffen
                                     </>
                                 )}
                             </button>

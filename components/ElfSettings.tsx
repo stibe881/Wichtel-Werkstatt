@@ -273,34 +273,136 @@ const ElfSettings: React.FC<Props> = ({ state, setState, onLogout }) => {
         <p className="text-sm text-slate-500 mb-4">Erstellen Sie Ihre Wichtel-Charaktere und weisen Sie ihnen Kinder zu. Jeder Wichtel hat seinen eigenen Namen und seine eigene Persönlichkeit.</p>
         <div className="space-y-6">
           {state.elves.map(elf => (
-            <div key={elf.id} className="p-4 border rounded-lg bg-slate-50">
-                <div className="flex justify-between items-start">
-                    <input 
-                        type="text"
-                        value={elf.name}
-                        onChange={(e) => updateElf(elf.id, { name: e.target.value })}
-                        className="font-bold text-lg p-1"
-                    />
-                    <div>
-                        <button onClick={() => setState(prev => ({...prev, activeElfId: elf.id}))} disabled={state.activeElfId === elf.id} className="text-xs px-2 py-1 bg-blue-100 disabled:bg-blue-300 rounded">Aktiv</button>
-                        <button onClick={() => setConfirmingDelete({ type: 'elf', id: elf.id, name: elf.name })} className="text-xs px-2 py-1 bg-red-100 ml-2 rounded">Löschen</button>
+            <div key={elf.id} className="p-6 border-2 border-[#e6dac0] rounded-xl bg-gradient-to-br from-[#fcfaf2] to-white shadow-md">
+                {/* Header with Avatar and Actions */}
+                <div className="flex items-start gap-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-elf-red to-elf-green rounded-full flex items-center justify-center text-3xl font-serif font-bold text-white border-2 border-[#855E42] flex-shrink-0">
+                        {elf.name.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1">
+                        <label className="text-xs font-bold text-slate-600 mb-1 block">Wichtel-Name</label>
+                        <input
+                            type="text"
+                            value={elf.name}
+                            onChange={(e) => updateElf(elf.id, { name: e.target.value })}
+                            className="font-bold text-2xl p-2 border-b-2 border-[#e6dac0] focus:border-elf-gold outline-none bg-transparent w-full"
+                            placeholder="Name des Wichtels"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        {state.activeElfId === elf.id ? (
+                            <span className="px-3 py-2 bg-elf-gold text-elf-dark rounded-lg font-bold text-xs">✓ Aktiv</span>
+                        ) : (
+                            <button
+                                onClick={() => setState(prev => ({...prev, activeElfId: elf.id}))}
+                                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold text-xs transition-colors"
+                            >
+                                Als aktiv setzen
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setConfirmingDelete({ type: 'elf', id: elf.id, name: elf.name })}
+                            className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-bold text-xs transition-colors"
+                        >
+                            Löschen
+                        </button>
                     </div>
                 </div>
-                <div className="mt-4">
-                    <h4 className="text-sm font-semibold mb-2">Zugeordnete Kinder:</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {state.kids.map(kid => (
-                            <label key={kid.id} className="flex items-center gap-2 p-2 border rounded cursor-pointer">
-                                <input 
-                                    type="checkbox"
-                                    checked={elf.kidIds.includes(kid.id)}
-                                    onChange={() => toggleKidForElf(elf.id, kid.id)}
-                                />
-                                {kid.name}
-                            </label>
-                        ))}
-                         {state.kids.length === 0 && <p className="text-xs text-slate-500">Bitte legen Sie zuerst Kinder an.</p>}
+
+                {/* Wichtel-Saison Dates */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-[#e6dac0] mb-4">
+                    <h4 className="font-bold text-sm mb-3 text-elf-dark flex items-center gap-2">
+                        <span className="material-icons-round text-elf-gold text-base">calendar_today</span>
+                        Wichtel-Saison
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold text-slate-600 mb-1 block">Einzug</label>
+                            <input
+                                type="date"
+                                value={elf.arrivalDate ? new Date(elf.arrivalDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => updateElf(elf.id, { arrivalDate: new Date(e.target.value).toISOString() })}
+                                className="w-full p-2 border border-[#e6dac0] rounded focus:border-elf-gold outline-none text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-slate-600 mb-1 block">Abreise</label>
+                            <input
+                                type="date"
+                                value={elf.departureDate ? new Date(elf.departureDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => updateElf(elf.id, { departureDate: new Date(e.target.value).toISOString() })}
+                                className="w-full p-2 border border-[#e6dac0] rounded focus:border-elf-gold outline-none text-sm"
+                            />
+                        </div>
                     </div>
+                </div>
+
+                {/* Personality Section */}
+                {elf.personality && (
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-[#e6dac0] mb-4">
+                        <h4 className="font-bold text-sm mb-3 text-elf-dark flex items-center gap-2">
+                            <span className="material-icons-round text-elf-gold text-base">psychology</span>
+                            Persönlichkeit
+                        </h4>
+
+                        {elf.personality.traits && elf.personality.traits.length > 0 && (
+                            <div className="mb-3">
+                                <label className="text-xs font-bold text-slate-600 mb-2 block">Charakterzüge</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {elf.personality.traits.map((trait, idx) => (
+                                        <span key={idx} className="bg-elf-gold/20 text-elf-dark px-3 py-1 rounded-full text-sm font-bold border border-elf-gold/30">
+                                            {trait}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {elf.personality.favoriteActivity && (
+                            <div className="mb-3">
+                                <label className="text-xs font-bold text-slate-600 mb-1 block">Lieblingsbeschäftigung</label>
+                                <p className="text-sm text-slate-700 bg-slate-50 p-2 rounded">{elf.personality.favoriteActivity}</p>
+                            </div>
+                        )}
+
+                        {elf.personality.quirk && (
+                            <div>
+                                <label className="text-xs font-bold text-slate-600 mb-1 block">Besonderheit</label>
+                                <p className="text-sm text-slate-700 bg-slate-50 p-2 rounded">{elf.personality.quirk}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Assigned Kids */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-[#e6dac0]">
+                    <h4 className="font-bold text-sm mb-3 text-elf-dark flex items-center gap-2">
+                        <span className="material-icons-round text-elf-gold text-base">child_care</span>
+                        Zugeordnete Kinder
+                    </h4>
+                    {state.kids.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic">Bitte legen Sie zuerst Kinder an.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {state.kids.map(kid => (
+                                <label key={kid.id} className="flex items-center gap-3 p-3 border border-[#e6dac0] rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={elf.kidIds.includes(kid.id)}
+                                        onChange={() => toggleKidForElf(elf.id, kid.id)}
+                                        className="w-4 h-4"
+                                    />
+                                    <span className="material-icons-round text-xl text-elf-gold">
+                                        {kid.gender === 'girl' ? 'face_3' : 'face_6'}
+                                    </span>
+                                    <div className="flex-1">
+                                        <p className="font-bold text-sm">{kid.name}</p>
+                                        <p className="text-xs text-slate-500">{kid.age} Jahre alt</p>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
           ))}
