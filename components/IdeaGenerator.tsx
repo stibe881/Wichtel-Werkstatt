@@ -290,15 +290,22 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
                                 {msg.ideas.map(idea => {
                                     const isSaved = existingIdeas.some(i => i.title === idea.title);
                                     return (
-                                        <div key={idea.id} className="bg-[#fcfaf2] p-2.5 rounded-xl border border-slate-300 shadow-sm text-left">
+                                        <div
+                                            key={idea.id}
+                                            onClick={() => setSelectedIdea(idea)}
+                                            className="bg-[#fcfaf2] p-2.5 rounded-xl border border-slate-300 shadow-sm text-left cursor-pointer hover:border-elf-gold hover:shadow-md transition-all"
+                                        >
                                             <div className="flex justify-between items-start mb-1">
                                                 <span className="font-bold text-elf-dark text-xs">{idea.title}</span>
-                                                <button 
-                                                    onClick={() => !isSaved && onAddIdea(idea)}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!isSaved) onAddIdea(idea);
+                                                    }}
                                                     disabled={isSaved}
                                                     className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase transition-colors ${
-                                                        isSaved 
-                                                        ? 'bg-green-100 text-green-700' 
+                                                        isSaved
+                                                        ? 'bg-green-100 text-green-700'
                                                         : 'bg-elf-gold text-elf-dark hover:bg-yellow-300 shadow-sm'
                                                     }`}
                                                 >
