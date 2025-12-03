@@ -71,7 +71,8 @@ const App: React.FC = () => {
       fetch(`${API_URL}/state/${encodeURIComponent(userId)}`)
         .then(res => res.ok ? res.json() : Promise.reject(`Failed to fetch: ${res.status}`))
         .then(data => {
-            const mergedState: AppState = { ...DEFAULT_STATE, ...data, savedIdeas: STARTER_IDEAS };
+            const finalIdeas = (data && data.savedIdeas && data.savedIdeas.length > 0) ? data.savedIdeas : STARTER_IDEAS;
+            const mergedState: AppState = { ...DEFAULT_STATE, ...data, savedIdeas: finalIdeas };
             if (mergedState.elves.length > 0 && !mergedState.activeElfId) {
                 mergedState.activeElfId = mergedState.elves[0].id;
             }
@@ -94,8 +95,7 @@ const App: React.FC = () => {
     
     const handler = setTimeout(() => {
       const stateToSave = { ...state };
-      delete (stateToSave as any).savedIdeas; // Don't save starter ideas to backend
-
+      
       fetch(`${API_URL}/state/${encodeURIComponent(userId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
