@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(docker-compose exec backend node:*)"
+      "Bash(docker-compose exec backend node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

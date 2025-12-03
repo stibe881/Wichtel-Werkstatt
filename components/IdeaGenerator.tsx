@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Idea, ElfConfig, Kid } from '../types';
+import { Idea, ElfConfig, Kid, CalendarDay } from '../types';
 import { chatWithIdeaAssistant } from '../services/geminiService';
 import IdeaWizard from './IdeaWizard';
 import IdeaDetail from './IdeaDetail';
@@ -11,6 +11,7 @@ interface Props {
   onDeleteIdea: (ideaId: string) => void;
   existingIdeas: Idea[];
   kids: Kid[];
+  calendar: CalendarDay[];
 }
 
 interface ChatMessage {
@@ -20,7 +21,7 @@ interface ChatMessage {
   ideas?: Idea[];
 }
 
-const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, existingIdeas, kids }) => {
+const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, existingIdeas, kids, calendar }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -86,9 +87,18 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
 
   const handleDeleteConfirm = () => {
     if (confirmingDelete) {
-        onDeleteIdea(confirmingDelete.id);
+        // Check if idea is used in calendar
+        const isUsedInCalendar = calendar.some(day => day.idea?.id === confirmingDelete.id);
+
+        if (!isUsedInCalendar) {
+            onDeleteIdea(confirmingDelete.id);
+        }
         setConfirmingDelete(null);
     }
+  };
+
+  const isIdeaUsedInCalendar = (ideaId: string) => {
+    return calendar.some(day => day.idea?.id === ideaId);
   };
 
   const QUICK_PROMPTS = [
@@ -120,14 +130,20 @@ const IdeaGenerator: React.FC<Props> = ({ elfConfig, onAddIdea, onDeleteIdea, ex
         />
       )}
 
-      {confirmingDelete && (
-          <ConfirmModal
-              title="Idee löschen?"
-              message={`Möchtest du die Idee "${confirmingDelete.title}" wirklich löschen?`}
-              onConfirm={handleDeleteConfirm}
-              onCancel={() => setConfirmingDelete(null)}
-          />
-      )}
+      {confirmingDelete && (() => {
+          const isUsed = isIdeaUsedInCalendar(confirmingDelete.id);
+          return (
+              <ConfirmModal
+                  title={isUsed ? "Idee wird verwendet!" : "Idee löschen?"}
+                  message={isUsed
+                      ? `Die Idee "${confirmingDelete.title}" wird im Planer verwendet und kann erst gelöscht werden, wenn sie aus dem Planer entfernt wurde.`
+                      : `Möchtest du die Idee "${confirmingDelete.title}" wirklich löschen?`}
+                  onConfirm={isUsed ? () => setConfirmingDelete(null) : handleDeleteConfirm}
+                  onCancel={() => setConfirmingDelete(null)}
+                  confirmLabel={isUsed ? "OK" : undefined}
+              />
+          );
+      })()}
 
       {/* Wooden Header Frame */}
       <div className="bg-wood-texture p-4 border-b-4 border-[#2d1b14] flex justify-between items-center shadow-lg relative z-10">

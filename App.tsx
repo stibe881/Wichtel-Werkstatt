@@ -277,7 +277,7 @@ const Content: React.FC<{
         case View.SETTINGS:
             return <ElfSettings state={state} setState={setState} />;
         case View.IDEAS:
-            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} />;
+            return <IdeaGenerator elfConfig={activeElf} onAddIdea={onAddIdea} onDeleteIdea={onDeleteIdea} existingIdeas={state.savedIdeas} kids={state.kids} calendar={state.calendar} />;
         case View.CALENDAR:
             return <Calendar calendar={state.calendar} savedIdeas={state.savedIdeas} onUpdateDay={onUpdateDay} elfConfig={activeElf} kids={state.kids} />;
         case View.LETTERS:
