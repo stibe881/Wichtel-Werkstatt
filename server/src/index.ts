@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { GoogleGenerativeAI } from '@google/generative-ai'; // Changed package
 import { initDB, getState, saveState } from './db';
 
 const app = express();
@@ -44,7 +43,7 @@ app.post('/state/:userId', async (req, res) => {
     }
 });
 
-// Proxy for Gemini API
+// Proxy for Gemini API using direct REST API call
 app.post('/generate', async (req, res) => {
     const { prompt, schema } = req.body;
 
@@ -57,15 +56,38 @@ app.post('/generate', async (req, res) => {
         if (!apiKey) {
             throw new Error("API key is not configured on the server.");
         }
-        const genAI = new GoogleGenerativeAI(apiKey);
 
-        // Use gemini-1.5-flash with the updated SDK
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Use direct REST API call to v1 endpoint (not v1beta)
+        const model = 'gemini-1.5-flash';
+        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
-        console.log('Attempting to generate content with gemini-1.5-flash');
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        console.log(`Calling Gemini API with model: ${model}`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+            throw new Error('No text returned from Gemini API');
+        }
 
         console.log('Content generated successfully');
         res.send({ text });
