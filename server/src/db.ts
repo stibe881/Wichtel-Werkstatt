@@ -51,7 +51,7 @@ export const saveState = async (userId: string, state: any): Promise<void> => {
   const stateJson = JSON.stringify(state);
   // This will insert a new row if the userId doesn't exist, or update the existing one if it does.
   await pool.query(
-    'INSERT INTO users (id, state) VALUES (?, ?) ON DUPLICATE KEY UPDATE state = ?',
+    'INSERT INTO users (id, state_json) VALUES (?, ?) ON DUPLICATE KEY UPDATE state_json = ?',
     [userId, stateJson, stateJson]
   );
 };
