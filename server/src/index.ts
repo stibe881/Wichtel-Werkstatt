@@ -44,6 +44,25 @@ app.post('/state/:userId', async (req, res) => {
     }
 });
 
+// Debug endpoint to list available models
+app.get('/list-models', async (req, res) => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("API key is not configured on the server.");
+        }
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const models = await genAI.listModels();
+        res.json({ models: models.map(m => ({ name: m.name, displayName: m.displayName })) });
+    } catch (error: any) {
+        console.error('Error listing models:', error);
+        res.status(500).send({
+            error: 'Failed to list models.',
+            details: error.message
+        });
+    }
+});
+
 // Proxy for Gemini API
 app.post('/generate', async (req, res) => {
     const { prompt, schema } = req.body;
@@ -51,26 +70,42 @@ app.post('/generate', async (req, res) => {
     if (!prompt) {
         return res.status(400).send({ error: 'Prompt is required.' });
     }
-    
+
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error("API key is not configured on the server.");
         }
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"}); // Using current Gemini model
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        res.send({ text });
+        // Try multiple model names
+        let modelName = "gemini-1.5-flash";
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+            res.send({ text });
+        } catch (error: any) {
+            // If flash fails, try pro
+            if (error.message?.includes('404') || error.message?.includes('not found')) {
+                console.log('Trying gemini-1.5-pro instead...');
+                modelName = "gemini-1.5-pro";
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
+                res.send({ text });
+            } else {
+                throw error;
+            }
+        }
 
     } catch (error: any) {
         console.error('Error generating content via proxy:', error);
-        res.status(500).send({ 
+        res.status(500).send({
             error: 'Failed to generate content.',
-            details: error.message 
+            details: error.message
         });
     }
 });
