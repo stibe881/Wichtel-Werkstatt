@@ -89,8 +89,7 @@ const IdeaWizard: React.FC<Props> = ({ onComplete, onCancel }) => {
                                 <select value={effort} onChange={(e) => setEffort(e.target.value as any)} className="w-full p-2 border rounded">
                                     <option value="niedrig">Niedrig (0-5 Min)</option>
                                     <option value="mittel">Mittel (5-15 Min)</option>
-                                    <option value="hoch">Hoch (>15 Min)</option>
-                                </select>
+                                                                          <option value="hoch">Hoch (&gt;15 Min)</option>                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold mb-1">Chaos-Faktor</label>
