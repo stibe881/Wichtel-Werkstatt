@@ -64,7 +64,7 @@ const App: React.FC = () => {
   const [hasLoadedFromBackend, setHasLoadedFromBackend] = useState(false);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [weather, setWeather] = useState({ temp: -20, condition: 'Schnee' });
-  const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false, currentElf: null as ElfConfig | null, currentType: '' as 'excuse' | 'lateprep' | '' });
+  const [emergencyModal, setEmergencyModal] = useState({ isOpen: false, title: '', message: '', isLoading: false, currentElf: null as ElfConfig | null, currentType: '' as 'excuse' | 'lateprep' | '', currentSolution: null as { instruction: string, letter: string } | null });
 
   // Initial data load
   useEffect(() => {
@@ -118,7 +118,8 @@ const App: React.FC = () => {
             message: 'Moment, ich frage kurz beim Wichtel nach...',
             isLoading: true,
             currentElf: elf,
-            currentType: 'excuse'
+            currentType: 'excuse',
+            currentSolution: null
         });
 
         const excuse = await generateElfExcuse(elf, state.kids);
@@ -129,7 +130,8 @@ const App: React.FC = () => {
             message: `"${excuse}"`,
             isLoading: false,
             currentElf: elf,
-            currentType: 'excuse'
+            currentType: 'excuse',
+            currentSolution: null
         });
     };
 
@@ -140,7 +142,8 @@ const App: React.FC = () => {
             message: 'Moment, die Zentrale schickt eine Blitz-Idee...',
             isLoading: true,
             currentElf: elf,
-            currentType: 'lateprep'
+            currentType: 'lateprep',
+            currentSolution: null
         });
 
         const solution = await generateLatePreparationSolution(elf, state.kids);
@@ -151,7 +154,8 @@ const App: React.FC = () => {
             message: `Anweisung:\n${solution.instruction}\n\nBrief an die Kinder:\n"${solution.letter}"`,
             isLoading: false,
             currentElf: elf,
-            currentType: 'lateprep'
+            currentType: 'lateprep',
+            currentSolution: solution
         });
     };
 
@@ -161,6 +165,40 @@ const App: React.FC = () => {
         } else if (emergencyModal.currentElf && emergencyModal.currentType === 'lateprep') {
             handleGenerateLatePrep(emergencyModal.currentElf);
         }
+    };
+
+    const handleAddEmergencyToPlanner = () => {
+        if (!emergencyModal.currentSolution) return;
+
+        // Create an Idea object from the emergency solution
+        const idea: Idea = {
+            id: `emergency-${Date.now()}`,
+            title: 'Blitz-Idee (Notfall)',
+            description: emergencyModal.currentSolution.instruction,
+            materials: [],
+            effort: 'niedrig',
+            messiness: 'sauber',
+            type: 'normal'
+        };
+
+        // Find today's date
+        const today = new Date().getDate();
+
+        // Add idea to savedIdeas and calendar
+        setState(prev => {
+            const ideaExists = prev.savedIdeas.some(i => i.id === idea.id);
+            const updatedIdeas = ideaExists ? prev.savedIdeas : [...prev.savedIdeas, idea];
+
+            // Update calendar to assign this idea to today
+            const updatedCalendar = prev.calendar.map(day =>
+                day.day === today ? { ...day, idea } : day
+            );
+
+            return { ...prev, savedIdeas: updatedIdeas, calendar: updatedCalendar };
+        });
+
+        // Close modal
+        setEmergencyModal({ ...emergencyModal, isOpen: false });
     };
 
   const handleAuth = (email: string) => {
@@ -236,6 +274,8 @@ const App: React.FC = () => {
                 weather={weather}
                 handlePanicMovement={handleGenerateExcuse}
                 handlePanicPreparation={handleGenerateLatePrep}
+                emergencyModal={emergencyModal}
+                setEmergencyModal={setEmergencyModal}
             />
         </div>
         {currentView !== View.KIDS_ZONE && <MobileNav currentView={currentView} setCurrentView={setCurrentView} />}
@@ -247,6 +287,7 @@ const App: React.FC = () => {
         message={emergencyModal.message}
         isLoading={emergencyModal.isLoading}
         onRegenerate={emergencyModal.currentType ? handleRegenerateEmergency : undefined}
+        onAddToPlanner={emergencyModal.currentType === 'lateprep' && emergencyModal.currentSolution ? handleAddEmergencyToPlanner : undefined}
       />
     </div>
   );
@@ -254,17 +295,19 @@ const App: React.FC = () => {
 
 // --- Helper Components ---
 
-const Content: React.FC<{ 
-    currentView: View, 
+const Content: React.FC<{
+    currentView: View,
     setCurrentView: (v: View) => void,
-    state: AppState, 
-    setState: React.Dispatch<React.SetStateAction<AppState>>, 
-    activeElf: ElfConfig | undefined, 
+    state: AppState,
+    setState: React.Dispatch<React.SetStateAction<AppState>>,
+    activeElf: ElfConfig | undefined,
     weather: any,
     handlePanicMovement: (elf: ElfConfig) => void,
     handlePanicPreparation: (elf: ElfConfig) => void,
-}> = 
-({ currentView, setCurrentView, state, setState, activeElf, weather, handlePanicMovement, handlePanicPreparation }) => {
+    emergencyModal: any,
+    setEmergencyModal: (modal: any) => void,
+}> =
+({ currentView, setCurrentView, state, setState, activeElf, weather, handlePanicMovement, handlePanicPreparation, emergencyModal, setEmergencyModal }) => {
     if (!activeElf) {
         return <ElfSettings state={state} setState={setState} />;
     }
