@@ -26,6 +26,30 @@ export const initDB = async () => {
       );
     `);
 
+    // Migration: Add authentication columns if they don't exist
+    try {
+      // Check if email column exists
+      const [columns]: any[] = await connection.query(`
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email';
+      `);
+
+      if (columns.length === 0) {
+        // Add authentication columns
+        await connection.query(`
+          ALTER TABLE users
+          ADD COLUMN email VARCHAR(255) UNIQUE,
+          ADD COLUMN password VARCHAR(255),
+          ADD COLUMN token VARCHAR(255);
+        `);
+        console.log('Authentication columns added successfully');
+      } else {
+        console.log('Authentication columns already exist');
+      }
+    } catch (alterError: any) {
+      console.error('Error adding authentication columns:', alterError);
+    }
+
     // For simplicity, we'll use a single row with a static ID to store the state.
     // In a real multi-user app, this ID would be linked to a user.
     await connection.query(`
