@@ -19,10 +19,13 @@ export const initDB = async () => {
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        password VARCHAR(255),
+        token VARCHAR(255),
         state_json JSON NOT NULL
       );
     `);
-    
+
     // For simplicity, we'll use a single row with a static ID to store the state.
     // In a real multi-user app, this ID would be linked to a user.
     await connection.query(`
