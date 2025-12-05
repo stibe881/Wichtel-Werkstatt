@@ -22,32 +22,73 @@ export const initDB = async () => {
         email VARCHAR(255) UNIQUE,
         password VARCHAR(255),
         token VARCHAR(255),
+        is_admin BOOLEAN DEFAULT FALSE,
+        push_token VARCHAR(512),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         state_json JSON NOT NULL
       );
     `);
 
-    // Migration: Add authentication columns if they don't exist
+    // Migration: Add columns if they don't exist
     try {
-      // Check if email column exists
-      const [columns]: any[] = await connection.query(`
+      // Check for is_admin column
+      const [isAdminCol]: any[] = await connection.query(`
         SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'email';
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_admin';
       `);
 
-      if (columns.length === 0) {
-        // Add authentication columns
-        await connection.query(`
-          ALTER TABLE users
-          ADD COLUMN email VARCHAR(255) UNIQUE,
-          ADD COLUMN password VARCHAR(255),
-          ADD COLUMN token VARCHAR(255);
-        `);
-        console.log('Authentication columns added successfully');
-      } else {
-        console.log('Authentication columns already exist');
+      if (isAdminCol.length === 0) {
+        await connection.query(`ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;`);
+        console.log('is_admin column added successfully');
+      }
+
+      // Check for push_token column
+      const [pushTokenCol]: any[] = await connection.query(`
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'push_token';
+      `);
+
+      if (pushTokenCol.length === 0) {
+        await connection.query(`ALTER TABLE users ADD COLUMN push_token VARCHAR(512);`);
+        console.log('push_token column added successfully');
+      }
+
+      // Check for created_at column
+      const [createdAtCol]: any[] = await connection.query(`
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'created_at';
+      `);
+
+      if (createdAtCol.length === 0) {
+        await connection.query(`ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+        console.log('created_at column added successfully');
       }
     } catch (alterError: any) {
-      console.error('Error adding authentication columns:', alterError);
+      console.error('Error adding columns:', alterError);
+    }
+
+    // Create prompts table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS prompts (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        template TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Insert default prompts if table is empty
+    const [promptCount]: any[] = await connection.query('SELECT COUNT(*) as count FROM prompts');
+    if (promptCount[0].count === 0) {
+      await connection.query(`
+        INSERT INTO prompts (id, name, category, template) VALUES
+        ('default_normal', 'Standard Wichtel-Idee', 'normal', 'Generiere eine kreative Idee für den Elf on the Shelf für Tag {day}. Die Idee sollte lustig, familienfreundlich und einfach umsetzbar sein.'),
+        ('default_arrival', 'Wichtel-Ankunft', 'arrival', 'Generiere eine herzliche Begrüßungsidee für die Ankunft des Elf on the Shelf. Die Idee sollte magisch und besonders sein.'),
+        ('default_departure', 'Wichtel-Abschied', 'departure', 'Generiere eine liebevolle Abschiedsidee für den Elf on the Shelf zum Ende der Weihnachtszeit. Die Idee sollte emotional und unvergesslich sein.');
+      `);
+      console.log('Default prompts inserted successfully');
     }
 
     // For simplicity, we'll use a single row with a static ID to store the state.

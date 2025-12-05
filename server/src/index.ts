@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { initDB, getState, saveState } from './db';
+import { authenticate, requireAdmin } from './middleware';
+import pool from './db';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -176,7 +178,290 @@ app.post('/generate', async (req, res) => {
     }
 });
 
+// ============================================
+// ADMIN ENDPOINTS
+// ============================================
 
+// Get all users (admin only)
+app.get('/api/admin/users', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const [users]: any[] = await pool.query(
+      'SELECT id, email, is_admin, push_token, created_at FROM users ORDER BY created_at DESC'
+    );
+
+    res.json(users.map((user: any) => ({
+      id: user.id,
+      email: user.email,
+      isAdmin: user.is_admin === 1 || user.is_admin === true,
+      pushToken: user.push_token,
+      createdAt: user.created_at
+    })));
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Fehler beim Abrufen der Benutzer' });
+  }
+});
+
+// Delete user (admin only)
+app.delete('/api/admin/users/:userId', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (userId === req.user?.id) {
+      return res.status(400).json({ message: 'Du kannst dich nicht selbst löschen' });
+    }
+
+    const [result]: any = await pool.query('DELETE FROM users WHERE id = ?', [userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+    }
+
+    res.json({ message: 'Benutzer erfolgreich gelöscht' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Fehler beim Löschen des Benutzers' });
+  }
+});
+
+// Toggle admin status (admin only)
+app.patch('/api/admin/users/:userId/admin', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { isAdmin } = req.body;
+
+    // Prevent admin from removing their own admin status
+    if (userId === req.user?.id && !isAdmin) {
+      return res.status(400).json({ message: 'Du kannst dir nicht selbst die Admin-Rechte entziehen' });
+    }
+
+    const [result]: any = await pool.query(
+      'UPDATE users SET is_admin = ? WHERE id = ?',
+      [isAdmin ? 1 : 0, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+    }
+
+    res.json({ message: 'Admin-Status erfolgreich aktualisiert' });
+  } catch (error) {
+    console.error('Error updating admin status:', error);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren des Admin-Status' });
+  }
+});
+
+// Get all prompts (admin only)
+app.get('/api/admin/prompts', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const [prompts]: any[] = await pool.query(
+      'SELECT id, name, category, template, created_at, updated_at FROM prompts ORDER BY category, name'
+    );
+
+    res.json(prompts.map((prompt: any) => ({
+      id: prompt.id,
+      name: prompt.name,
+      category: prompt.category,
+      template: prompt.template,
+      createdAt: prompt.created_at,
+      updatedAt: prompt.updated_at
+    })));
+  } catch (error) {
+    console.error('Error fetching prompts:', error);
+    res.status(500).json({ message: 'Fehler beim Abrufen der Prompts' });
+  }
+});
+
+// Create new prompt (admin only)
+app.post('/api/admin/prompts', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { name, category, template } = req.body;
+
+    if (!name || !category || !template) {
+      return res.status(400).json({ message: 'Name, Kategorie und Template sind erforderlich' });
+    }
+
+    const promptId = `prompt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    await pool.query(
+      'INSERT INTO prompts (id, name, category, template) VALUES (?, ?, ?, ?)',
+      [promptId, name, category, template]
+    );
+
+    res.json({
+      id: promptId,
+      message: 'Prompt erfolgreich erstellt'
+    });
+  } catch (error) {
+    console.error('Error creating prompt:', error);
+    res.status(500).json({ message: 'Fehler beim Erstellen des Prompts' });
+  }
+});
+
+// Update prompt (admin only)
+app.patch('/api/admin/prompts/:promptId', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { promptId } = req.params;
+    const { name, category, template } = req.body;
+
+    if (!name || !category || !template) {
+      return res.status(400).json({ message: 'Name, Kategorie und Template sind erforderlich' });
+    }
+
+    const [result]: any = await pool.query(
+      'UPDATE prompts SET name = ?, category = ?, template = ? WHERE id = ?',
+      [name, category, template, promptId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Prompt nicht gefunden' });
+    }
+
+    res.json({ message: 'Prompt erfolgreich aktualisiert' });
+  } catch (error) {
+    console.error('Error updating prompt:', error);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren des Prompts' });
+  }
+});
+
+// Delete prompt (admin only)
+app.delete('/api/admin/prompts/:promptId', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { promptId } = req.params;
+
+    const [result]: any = await pool.query('DELETE FROM prompts WHERE id = ?', [promptId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Prompt nicht gefunden' });
+    }
+
+    res.json({ message: 'Prompt erfolgreich gelöscht' });
+  } catch (error) {
+    console.error('Error deleting prompt:', error);
+    res.status(500).json({ message: 'Fehler beim Löschen des Prompts' });
+  }
+});
+
+// Send broadcast notification (admin only)
+app.post('/api/admin/notifications/broadcast', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { title, body } = req.body;
+
+    if (!title || !body) {
+      return res.status(400).json({ message: 'Titel und Nachricht sind erforderlich' });
+    }
+
+    // Get all users with push tokens
+    const [users]: any[] = await pool.query(
+      'SELECT push_token FROM users WHERE push_token IS NOT NULL AND push_token != ""'
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'Keine Benutzer mit Push-Token gefunden' });
+    }
+
+    // Prepare Expo push notifications
+    const messages = users
+      .map((user: any) => user.push_token)
+      .filter((token: string) => token && token.startsWith('ExponentPushToken'))
+      .map((token: string) => ({
+        to: token,
+        sound: 'default',
+        title: title,
+        body: body,
+        data: { type: 'admin_broadcast' },
+      }));
+
+    if (messages.length === 0) {
+      return res.status(400).json({ message: 'Keine gültigen Push-Token gefunden' });
+    }
+
+    // Send notifications to Expo Push API
+    const chunks = chunkArray(messages, 100); // Expo allows max 100 notifications per request
+
+    for (const chunk of chunks) {
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chunk),
+      });
+
+      if (!response.ok) {
+        console.error('Error sending push notifications:', await response.text());
+      }
+    }
+
+    res.json({
+      message: 'Benachrichtigungen erfolgreich gesendet',
+      count: messages.length
+    });
+  } catch (error) {
+    console.error('Error sending broadcast notification:', error);
+    res.status(500).json({ message: 'Fehler beim Senden der Benachrichtigung' });
+  }
+});
+
+// Update user's push token
+app.post('/api/users/:userId/push-token', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { pushToken } = req.body;
+
+    // Ensure user can only update their own push token
+    if (userId !== req.user?.id) {
+      return res.status(403).json({ message: 'Keine Berechtigung' });
+    }
+
+    await pool.query(
+      'UPDATE users SET push_token = ? WHERE id = ?',
+      [pushToken, userId]
+    );
+
+    res.json({ message: 'Push-Token erfolgreich aktualisiert' });
+  } catch (error) {
+    console.error('Error updating push token:', error);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren des Push-Tokens' });
+  }
+});
+
+// Helper function to chunk array
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// Setup endpoint to make a user admin (use this once to bootstrap)
+app.post('/setup/make-admin', async (req, res) => {
+  try {
+    const { email, setupKey } = req.body;
+
+    // Simple protection - require a setup key
+    if (setupKey !== process.env.SETUP_KEY && setupKey !== 'wichtel-setup-2024') {
+      return res.status(403).json({ message: 'Ungültiger Setup-Key' });
+    }
+
+    const [result]: any = await pool.query(
+      'UPDATE users SET is_admin = 1 WHERE email = ?',
+      [email]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+    }
+
+    res.json({ message: `${email} ist jetzt Administrator` });
+  } catch (error) {
+    console.error('Error making user admin:', error);
+    res.status(500).json({ message: 'Fehler beim Admin-Setup' });
+  }
+});
 
 initDB().then(() => {
     app.listen(port, () => {
