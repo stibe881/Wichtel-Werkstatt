@@ -179,6 +179,24 @@ app.post('/generate', async (req, res) => {
 });
 
 // ============================================
+// USER ENDPOINTS
+// ============================================
+
+// Get current user info (authenticated users)
+app.get('/api/user/me', authenticate, async (req, res) => {
+  try {
+    res.json({
+      id: req.user?.id,
+      email: req.user?.email,
+      isAdmin: req.user?.isAdmin || false
+    });
+  } catch (error) {
+    console.error('Error getting user info:', error);
+    res.status(500).json({ message: 'Fehler beim Abrufen der Benutzerinformationen' });
+  }
+});
+
+// ============================================
 // ADMIN ENDPOINTS
 // ============================================
 

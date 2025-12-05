@@ -31,7 +31,8 @@
       "Bash(npx tsc:*)",
       "Bash(curl:*)",
       "Bash(npx eas-cli:*)",
-      "Bash(npx expo-doctor)"
+      "Bash(npx expo-doctor)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
